@@ -1,0 +1,1761 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบบัตรควบคุมและเบิกจ่ายวัสดุ (Paper & Ledger Style)</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Krub:wght@400;500;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body { 
+      font-family: 'Sarabun', sans-serif; 
+      background-color: #f3efe6;
+      background-image: radial-gradient(#e4dcce 0.8px, transparent 0.8px);
+      background-size: 16px 16px;
+    }
+    .font-mono-ledger { font-family: 'Courier Prime', monospace; }
+    .font-heading { font-family: 'Krub', sans-serif; }
+
+    /* Paper Effect & Subtle Shadows */
+    .paper-sheet {
+      background: #fdfcf9;
+      border: 1px solid #e2dac9;
+      box-shadow: 
+        0 1px 2px rgba(60, 50, 30, 0.05),
+        0 4px 12px rgba(60, 50, 30, 0.06),
+        0 12px 28px rgba(60, 50, 30, 0.04);
+      position: relative;
+    }
+
+    .paper-sheet::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        rgba(235, 227, 213, 0.15),
+        rgba(235, 227, 213, 0.15) 1px,
+        transparent 1px,
+        transparent 28px
+      );
+      pointer-events: none;
+      border-radius: inherit;
+    }
+
+    /* Manila Folder Tab Effect */
+    .folder-tab {
+      background: #e9e1cf;
+      border: 1px solid #d4c7b0;
+      border-bottom: none;
+      border-radius: 8px 8px 0 0;
+      transition: all 0.15s ease-in-out;
+    }
+    .folder-tab.active {
+      background: #fdfcf9;
+      border-color: #d4c7b0;
+      box-shadow: 0 -2px 6px rgba(50, 40, 20, 0.05);
+      position: relative;
+      z-index: 10;
+    }
+
+    /* Rubber Stamp Effect */
+    .stamp-red {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.15rem 0.5rem;
+      border: 2px dashed #b91c1c;
+      color: #b91c1c;
+      font-weight: 700;
+      font-size: 0.75rem;
+      border-radius: 4px;
+      transform: rotate(-2deg);
+      background-color: rgba(254, 226, 226, 0.4);
+      letter-spacing: 0.05em;
+    }
+
+    .stamp-green {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.15rem 0.5rem;
+      border: 2px solid #15803d;
+      color: #15803d;
+      font-weight: 700;
+      font-size: 0.75rem;
+      border-radius: 4px;
+      transform: rotate(1.5deg);
+      background-color: rgba(220, 252, 231, 0.4);
+      letter-spacing: 0.05em;
+    }
+
+    .stamp-blue {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.75rem;
+      border: 2.5px solid #1d4ed8;
+      color: #1d4ed8;
+      font-weight: 800;
+      font-size: 0.85rem;
+      border-radius: 6px;
+      transform: rotate(-3deg);
+      background-color: rgba(219, 234, 254, 0.35);
+      box-shadow: 0 0 0 1px rgba(29, 78, 216, 0.15);
+    }
+
+    /* Traditional Stock Card Grid */
+    .stock-card-table th {
+      border: 1px solid #dcd2be;
+      background: #f5eedf;
+      color: #5c4e36;
+      font-weight: 600;
+      font-size: 0.75rem;
+    }
+    .stock-card-table td {
+      border: 1px solid #e7dfce;
+    }
+
+    /* Perforated paper / tear line */
+    .perforated {
+      border-top: 2px dashed #c8beab;
+    }
+
+    /* Hide number input spinners for perfect center alignment */
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { 
+      -webkit-appearance: none; 
+      margin: 0; 
+    }
+    input[type=number] {
+      -moz-appearance: textfield;
+      appearance: textfield;
+    }
+
+    @media print {
+      body { background: white !important; }
+      .no-print { display: none !important; }
+      .paper-sheet { border: none !important; box-shadow: none !important; }
+    }
+  </style>
+</head>
+<body class="text-stone-800 antialiased min-h-screen flex flex-col p-4 md:p-8">
+
+  <!-- Desktop Header: Binder / Ledger Folder Title -->
+  <header class="max-w-6xl w-full mx-auto mb-4 no-print">
+    <div class="flex items-center justify-between border-b-2 border-stone-300 pb-4">
+      <div class="flex items-center gap-3.5">
+        <!-- Brass Clip / Ring Binder Icon -->
+        <div class="w-12 h-12 bg-amber-100/80 border-2 border-stone-400 rounded-lg flex items-center justify-center text-stone-700 shadow-inner">
+          <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-heading font-bold text-2xl text-stone-900 tracking-tight">สมุดทะเบียนและบัตรควบคุมวัสดุ (Stock Card)</h1>
+            <span class="text-xs bg-amber-200/70 text-amber-900 px-2 py-0.5 rounded font-mono font-bold border border-amber-300">วสด.-๒๕๖๙</span>
+          </div>
+          <p class="text-xs text-stone-600 font-medium mt-0.5">งานบริหารวัสดุและคลัง • สำนักช่าง (ระบบบันทึกและเบิกจ่าย)</p>
+        </div>
+      </div>
+
+      <!-- Quick Search (Typewriter styling) -->
+      <div class="flex items-center gap-3">
+        <div class="relative w-72">
+          <input 
+            type="text" 
+            id="searchInput" 
+            onkeyup="filterTable()" 
+            placeholder="ค้นหาชื่อวัสดุ หรือรหัส..." 
+            class="w-full bg-[#f8f5ee] border border-stone-300 text-xs px-3 py-2 rounded-md font-mono-ledger placeholder:text-stone-400 focus:bg-white focus:border-stone-500 focus:outline-none shadow-inner"
+          >
+          <span class="absolute right-2.5 top-2 text-[10px] text-stone-400 font-mono">ค้นหา (/)</span>
+        </div>
+
+        <!-- Sticky Note Badge for Alerts -->
+        <div class="bg-amber-100 border border-amber-300 px-3 py-1.5 rounded shadow-xs -rotate-1 text-xs text-amber-900 flex items-center gap-1.5 font-medium">
+          <span class="w-2 h-2 rounded-full bg-red-500"></span>
+          <span>ใกล้หมด: <strong>3</strong> รายการ</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Folder Tabs Bar (PC Manila Folder Aesthetic) -->
+    <div class="flex items-end gap-1.5 mt-3 pt-2">
+      <button onclick="switchTab('stockcard')" id="tab-btn-stockcard" class="folder-tab active px-5 py-2.5 text-xs font-heading font-bold text-stone-900 flex items-center gap-2">
+        <svg class="w-4 h-4 text-stone-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        [แฟ้มที่ ๑] บัตรควบคุมวัสดุคงเหลือ (Ledger)
+      </button>
+
+      <button onclick="switchTab('issueform')" id="tab-btn-issueform" class="folder-tab px-5 py-2.5 text-xs font-heading font-semibold text-stone-600 hover:text-stone-900 flex items-center gap-2">
+        <svg class="w-4 h-4 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+        [แฟ้มที่ ๒] ใบขอเบิกวัสดุ (Requisition Form)
+      </button>
+
+      <button onclick="switchTab('slipview')" id="tab-btn-slipview" class="folder-tab px-5 py-2.5 text-xs font-heading font-semibold text-stone-600 hover:text-stone-900 flex items-center gap-2">
+        <svg class="w-4 h-4 text-stone-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+        [แฟ้มที่ ๓] พิมพ์ใบรับ-จ่ายวัสดุจริง (A4 Print)
+      </button>
+
+      <button onclick="switchTab('scanbill')" id="tab-btn-scanbill" class="folder-tab px-5 py-2.5 text-xs font-heading font-semibold text-emerald-800 bg-emerald-50/50 hover:bg-emerald-100/60 hover:text-emerald-900 flex items-center gap-2 border-emerald-300">
+        <svg class="w-4 h-4 text-emerald-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        [แฟ้มที่ ๔] สแกนบิลรับของเข้าคลัง (AI Scanner)
+      </button>
+
+      <div class="ml-auto text-[11px] text-stone-500 font-mono-ledger pb-2">
+        วันที่พิมพ์/บันทึก: ๐๒ ตุลาคม ๒๕๖๙
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Sheet Container (Paper Texture Effect) -->
+  <main class="max-w-6xl w-full mx-auto flex-1 paper-sheet rounded-b-xl rounded-tr-xl p-6 md:p-8">
+
+    <!-- ================= TAB 1: STOCK CARD LEDGER (บัตรพัสดุ) ================= -->
+    <section id="section-stockcard" class="space-y-6">
+      
+      <!-- Top Paper Header & Filter -->
+      <div class="flex flex-wrap items-center justify-between border-b-2 border-stone-800 pb-3 gap-3">
+        <div>
+          <span class="text-[11px] font-mono-ledger text-stone-500 uppercase tracking-widest">STOCK INVENTORY CONTROL LEDGER</span>
+          <h2 class="text-xl font-heading font-bold text-stone-900">ทะเบียนคุมยอดวัสดุในคลังหลังบ้าน</h2>
+        </div>
+        
+        <!-- Filter Controls (5 User Categories) -->
+        <div class="flex items-center gap-2 text-xs">
+          <label class="font-semibold text-stone-600">ประเภทคลัง:</label>
+          <select id="catSelect" onchange="filterTable()" class="bg-[#f7f3ea] border border-stone-300 rounded px-2.5 py-1 text-xs text-stone-800 font-medium">
+            <option value="all">ทุกหมวดวัสดุ (ทั้ง ๕ คลัง)</option>
+            <option value="ซองจดหมาย">ซองจดหมาย</option>
+            <option value="วัสดุรวม">วัสดุรวม</option>
+            <option value="วัสดุสำนักงาน">วัสดุสำนักงาน</option>
+            <option value="วัสดุงานบ้าน">วัสดุงานบ้าน</option>
+            <option value="วัสดุคอมพิวเตอร์">วัสดุคอมพิวเตอร์</option>
+          </select>
+
+          <button onclick="alert('บันทึกสมุดคุมสต็อกเป็น Excel (.xlsx)')" class="border border-stone-400 bg-[#faf6ee] hover:bg-[#eae2d3] px-3 py-1 rounded text-stone-800 font-medium flex items-center gap-1">
+            <svg class="w-3.5 h-3.5 text-stone-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            ส่งออกแฟ้ม Excel
+          </button>
+
+          <button onclick="switchTab('issueform')" class="bg-stone-800 hover:bg-stone-900 text-amber-50 px-3.5 py-1 rounded font-medium flex items-center gap-1 shadow-xs">
+            + เขียนใบขอเบิก
+          </button>
+        </div>
+      </div>
+
+      <!-- Traditional Paper Stock Card Table -->
+      <div class="overflow-x-auto border border-stone-300 rounded-sm">
+        <table class="w-full text-left stock-card-table border-collapse" id="mainLedgerTable">
+          <thead>
+            <tr>
+              <th class="py-2.5 px-3 w-28 text-center font-mono-ledger">รหัสวัสดุ</th>
+              <th class="py-2.5 px-4">รายการวัสดุและคุณลักษณะ</th>
+              <th class="py-2.5 px-3 w-36 text-center">คลังที่เก็บ</th>
+              <th class="py-2.5 px-3 w-24 text-center">เกณฑ์ต่ำสุด</th>
+              <th class="py-2.5 px-3 w-28 text-center font-mono-ledger bg-[#eee5d3]">คงเหลือจริง</th>
+              <th class="py-2.5 px-3 w-28 text-center">สถานะการจ่าย</th>
+              <th class="py-2.5 px-3 w-20 text-center">ดำเนินการ</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-stone-200 text-xs" id="ledgerBody">
+            
+            <!-- Row 1: ซองจดหมาย -->
+            <tr class="hover:bg-[#fbf7ee]/90 transition" data-cat="ซองจดหมาย">
+              <td class="py-3 px-3 text-center font-mono-ledger font-bold text-stone-900">ENV-WHT-01</td>
+              <td class="py-3 px-4">
+                <div class="font-bold text-stone-900 text-sm">ซองจดหมายขาว มาตรฐาน 9/125 มีแถบกาว</div>
+                <div class="text-[11px] text-stone-500 italic">ขนาด 108 x 235 มม. (๕๐๐ ซอง/กล่อง)</div>
+              </td>
+              <td class="py-3 px-3 text-center font-semibold text-stone-800 bg-[#faf6ee]">ซองจดหมาย</td>
+              <td class="py-3 px-3 text-center font-mono-ledger text-stone-500">5</td>
+              <td class="py-3 px-3 text-center font-mono-ledger font-bold text-stone-900 bg-stone-50 text-sm">
+                12
+              </td>
+              <td class="py-3 px-3 text-center">
+                <span class="stamp-green">มีพร้อมจ่าย</span>
+              </td>
+              <td class="py-3 px-3 text-center">
+                <button onclick="quickIssueToForm('ENV-WHT-01', 'ซองจดหมายขาว มาตรฐาน 9/125', 12)" class="text-stone-800 hover:text-blue-800 underline font-semibold">ขอเบิก</button>
+              </td>
+            </tr>
+
+            <!-- Row 2: วัสดุสำนักงาน -->
+            <tr class="hover:bg-[#fbf7ee]/90 transition" data-cat="วัสดุสำนักงาน">
+              <td class="py-3 px-3 text-center font-mono-ledger font-bold text-stone-900">OFF-PPR-01</td>
+              <td class="py-3 px-4">
+                <div class="font-bold text-stone-900 text-sm">กระดาษถ่ายเอกสาร A4 80 แกรม Double A</div>
+                <div class="text-[11px] text-stone-500 italic">ขนาดมาตรฐาน (๕ รีม/กล่อง)</div>
+              </td>
+              <td class="py-3 px-3 text-center font-semibold text-stone-800 bg-[#faf6ee]">วัสดุสำนักงาน</td>
+              <td class="py-3 px-3 text-center font-mono-ledger text-stone-500">10</td>
+              <td class="py-3 px-3 text-center font-mono-ledger font-bold text-red-700 bg-red-50/50 text-sm">
+                4
+              </td>
+              <td class="py-3 px-3 text-center">
+                <span class="stamp-red">ใกล้หมดคลัง</span>
+              </td>
+              <td class="py-3 px-3 text-center">
+                <button onclick="quickIssueToForm('OFF-PPR-01', 'กระดาษถ่ายเอกสาร A4 80 แกรม', 4)" class="text-stone-800 hover:text-blue-800 underline font-semibold">ขอเบิก</button>
+              </td>
+            </tr>
+
+            <!-- Row 3: วัสดุคอมพิวเตอร์ -->
+            <tr class="hover:bg-[#fbf7ee]/90 transition" data-cat="วัสดุคอมพิวเตอร์">
+              <td class="py-3 px-3 text-center font-mono-ledger font-bold text-stone-900">COM-MOU-02</td>
+              <td class="py-3 px-4">
+                <div class="font-bold text-stone-900 text-sm">เมาส์ไร้สาย Logitech Wireless B170</div>
+                <div class="text-[11px] text-stone-500 italic">พร้อมถ่าน AA สำหรับประจำจุดทำงาน</div>
+              </td>
+              <td class="py-3 px-3 text-center font-semibold text-stone-800 bg-[#faf6ee]">วัสดุคอมพิวเตอร์</td>
+              <td class="py-3 px-3 text-center font-mono-ledger text-stone-500">5</td>
+              <td class="py-3 px-3 text-center font-mono-ledger font-bold text-stone-900 bg-stone-50 text-sm">
+                25
+              </td>
+              <td class="py-3 px-3 text-center">
+                <span class="stamp-green">มีพร้อมจ่าย</span>
+              </td>
+              <td class="py-3 px-3 text-center">
+                <button onclick="quickIssueToForm('COM-MOU-02', 'เมาส์ไร้สาย Logitech B170', 25)" class="text-stone-800 hover:text-blue-800 underline font-semibold">ขอเบิก</button>
+              </td>
+            </tr>
+
+            <!-- Row 4: วัสดุรวม -->
+            <tr class="hover:bg-[#fbf7ee]/90 transition" data-cat="วัสดุรวม">
+              <td class="py-3 px-3 text-center font-mono-ledger font-bold text-stone-900">GEN-BOX-02</td>
+              <td class="py-3 px-4">
+                <div class="font-bold text-stone-900 text-sm">กล่องพัสดุลูกฟูก เบอร์ C (20 x 30 x 11 ซม.)</div>
+                <div class="text-[11px] text-stone-500 italic">มัดละ ๒๐ ใบ สำหรับงานบรรจุหีบห่อจัดส่ง</div>
+              </td>
+              <td class="py-3 px-3 text-center font-semibold text-stone-800 bg-[#faf6ee]">วัสดุรวม</td>
+              <td class="py-3 px-3 text-center font-mono-ledger text-stone-500">3</td>
+              <td class="py-3 px-3 text-center font-mono-ledger font-bold text-stone-900 bg-stone-50 text-sm">
+                15
+              </td>
+              <td class="py-3 px-3 text-center">
+                <span class="stamp-green">มีพร้อมจ่าย</span>
+              </td>
+              <td class="py-3 px-3 text-center">
+                <button onclick="quickIssueToForm('GEN-BOX-02', 'กล่องพัสดุ เบอร์ C', 15)" class="text-stone-800 hover:text-blue-800 underline font-semibold">ขอเบิก</button>
+              </td>
+            </tr>
+
+            <!-- Row 5: วัสดุงานบ้าน -->
+            <tr class="hover:bg-[#fbf7ee]/90 transition" data-cat="วัสดุงานบ้าน">
+              <td class="py-3 px-3 text-center font-mono-ledger font-bold text-stone-900">HOU-GLV-03</td>
+              <td class="py-3 px-4">
+                <div class="font-bold text-stone-900 text-sm">ถุงมือยางอนามัย ไซส์ M (กล่อง 100 ชิ้น)</div>
+                <div class="text-[11px] text-stone-500 italic">วัสดุใช้สิ้นเปลืองสำหรับงานทำความสะอาด</div>
+              </td>
+              <td class="py-3 px-3 text-center font-semibold text-stone-800 bg-[#faf6ee]">วัสดุงานบ้าน</td>
+              <td class="py-3 px-3 text-center font-mono-ledger text-stone-500">8</td>
+              <td class="py-3 px-3 text-center font-mono-ledger font-bold text-red-700 bg-red-50/50 text-sm">
+                2
+              </td>
+              <td class="py-3 px-3 text-center">
+                <span class="stamp-red">ใกล้หมดคลัง</span>
+              </td>
+              <td class="py-3 px-3 text-center">
+                <button onclick="quickIssueToForm('HOU-GLV-03', 'ถุงมือยางอนามัย ไซส์ M', 2)" class="text-stone-800 hover:text-blue-800 underline font-semibold">ขอเบิก</button>
+              </td>
+            </tr>
+
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Traditional Ledger Card Footer / Note -->
+      <div class="flex items-center justify-between text-xs text-stone-500 pt-2 border-t border-stone-200">
+        <div class="flex items-center gap-2">
+          <span>* ตรวจสอบยอดสต็อกล่าสุดเมื่อ ๐๒/๑๐/๒๕๖๙ เวลา ๐๘:๓๐ น.</span>
+        </div>
+        <div class="font-mono-ledger" id="ledgerCountNotice">
+          หน้า ๑ จาก ๑ (รายการคงค้างทั้งหมด ๔ รายการ)
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ================= TAB 2: REQUISITION FORM (ใบขอเบิกสไตล์กระดาษ) ================= -->
+    <section id="section-issueform" class="hidden space-y-6">
+      
+      <!-- Official Form Title -->
+      <div class="border-b-2 border-stone-800 pb-4 text-center relative">
+        <span class="absolute left-0 top-0 font-mono-ledger text-xs text-stone-500 border border-stone-300 px-2 py-1 bg-stone-50">
+          แบบ วสด. ๐๑
+        </span>
+        <h2 class="font-heading font-bold text-2xl text-stone-900 tracking-tight">ใบขอเบิกและส่งมอบวัสดุภายในองค์กร</h2>
+        <p class="text-xs text-stone-600 mt-1">คลังกลางวัสดุ สำนักงานใหญ่ • เอกสารลงทะเบียนเลขที่: <span class="font-mono-ledger font-bold text-stone-800">REQ-69-10-0021</span></p>
+      </div>
+
+      <!-- Paper Form Fields (Grid layout like printed form) -->
+      <div class="bg-[#fbf8f2] border border-stone-300 p-5 rounded-md text-xs space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="font-bold text-stone-800 block mb-1">วันที่ทำรายการเบิก:</label>
+            <input type="text" id="paperDate" value="๕ ตุลาคม ๒๕๖๙" class="w-full bg-white border border-stone-300 px-2.5 py-1.5 rounded font-mono-ledger text-stone-800">
+          </div>
+          <div>
+            <label class="font-bold text-stone-800 block mb-1">ฝ่าย / กลุ่มงานที่ขอเบิก (สำนักช่าง):</label>
+            <select id="paperDeptSelect" class="w-full bg-white border border-stone-300 px-2.5 py-1.5 rounded font-medium text-stone-800">
+              <option value="CON">[CON] ฝ่ายก่อสร้างและซ่อมบำรุง</option>
+              <option value="DES">[DES] ฝ่ายออกแบบ</option>
+              <option value="SUR">[SUR] ฝ่ายสำรวจ</option>
+              <option value="ARC">[ARC] กลุ่มงานสถาปัตยกรรม</option>
+              <option value="RRD">[RRD] กลุ่มงานทางหลวงชนบท</option>
+              <option value="MCH">[MCH] ฝ่ายเครื่องจักรกล</option>
+              <option value="ADM">[ADM] ฝ่ายบริหารงานทั่วไป</option>
+            </select>
+          </div>
+          <div>
+            <label class="font-bold text-stone-800 block mb-1">ชื่อผู้ขอเบิก (เจ้าหน้าที่ / นายช่าง):</label>
+            <input type="text" id="paperRequesterName" value="นายวิชัย สุวรรณโชติ (นายช่างโยธาปฏิบัติงาน)" class="w-full bg-white border border-stone-300 px-2.5 py-1.5 rounded font-medium text-stone-800">
+          </div>
+          <div>
+            <label class="font-bold text-stone-800 block mb-1">ชื่อหัวหน้าฝ่าย / ผู้สั่งจ่าย (ผู้อนุมัติ):</label>
+            <input type="text" id="paperApproverName" value="นายชำนาญ การช่าง (หัวหน้าฝ่ายแบบแผน)" class="w-full bg-white border border-stone-300 px-2.5 py-1.5 rounded font-medium text-stone-800">
+          </div>
+          <div>
+            <label class="font-bold text-stone-800 block mb-1">ชื่อผู้จ่ายพัสดุ / เจ้าหน้าที่คลัง:</label>
+            <input type="text" id="paperFulfilledBy" value="นายสมบัติ คลังพัสดุ (นายช่างโยธาชำนาญงาน)" class="w-full bg-white border border-stone-300 px-2.5 py-1.5 rounded font-medium text-stone-800">
+          </div>
+          <div>
+            <label class="font-bold text-stone-800 block mb-1">เหตุผลหรือโครงการที่นำไปใช้:</label>
+            <input type="text" id="paperPurpose" value="ใช้สำหรับจัดทำแบบแปลนและเอกสารโครงการปรับปรุงถนนสายหลัก" class="w-full bg-white border border-stone-300 px-2.5 py-1.5 rounded font-medium text-stone-800">
+          </div>
+        </div>
+      </div>
+
+      <!-- Item Request Table (Printed Sheet style) -->
+      <div>
+        <div class="flex justify-between items-center mb-2">
+          <span class="text-xs font-bold text-stone-800">รายการวัสดุที่ขอเบิก:</span>
+          <button onclick="addPaperRow()" class="text-xs font-bold text-stone-700 hover:text-stone-900 border border-stone-400 bg-[#f7f2e7] px-2.5 py-1 rounded">
+            + เพิ่มรายการเบิก
+          </button>
+        </div>
+
+        <table class="w-full stock-card-table border-collapse text-xs" id="paperReqTable">
+          <thead>
+            <tr>
+              <th class="py-2 px-2 w-10 text-center">ลำดับ</th>
+              <th class="py-2 px-3 w-32 font-mono-ledger text-center">รหัสวัสดุ</th>
+              <th class="py-2 px-4">ชื่อและรายละเอียดวัสดุ</th>
+              <th class="py-2 px-3 w-24 text-center">คงเหลือในคลัง</th>
+              <th class="py-2 px-3 w-28 text-center bg-[#f0e7d5]">จำนวนที่ขอเบิก</th>
+              <th class="py-2 px-2 w-12 text-center">ลบ</th>
+            </tr>
+          </thead>
+          <tbody id="paperReqBody">
+            <tr>
+              <td class="py-2.5 px-2 text-center font-mono-ledger">๑</td>
+              <td class="py-2.5 px-3 font-mono-ledger font-bold text-stone-800">OFF-PPR-01</td>
+              <td class="py-2.5 px-4 font-medium text-stone-900">กระดาษถ่ายเอกสาร A4 80 แกรม Double A</td>
+              <td class="py-2.5 px-3 text-center font-mono-ledger text-stone-600">4</td>
+              <td class="py-2.5 px-3 text-center bg-[#faf6ee]">
+                <input type="number" value="2" min="1" max="4" class="w-16 text-center font-mono-ledger font-bold text-sm bg-white border border-stone-300 py-1 rounded">
+              </td>
+              <td class="py-2.5 px-2 text-center"><button onclick="this.closest('tr').remove()" class="text-stone-400 hover:text-red-600">✕</button></td>
+            </tr>
+            <tr>
+              <td class="py-2.5 px-2 text-center font-mono-ledger">๒</td>
+              <td class="py-2.5 px-3 font-mono-ledger font-bold text-stone-800">COM-MOU-02</td>
+              <td class="py-2.5 px-4 font-medium text-stone-900">เมาส์ไร้สาย Logitech Wireless B170</td>
+              <td class="py-2.5 px-3 text-center font-mono-ledger text-stone-600">25</td>
+              <td class="py-2.5 px-3 text-center bg-[#faf6ee]">
+                <input type="number" value="1" min="1" max="25" class="w-16 text-center font-mono-ledger font-bold text-sm bg-white border border-stone-300 py-1 rounded">
+              </td>
+              <td class="py-2.5 px-2 text-center"><button onclick="this.closest('tr').remove()" class="text-stone-400 hover:text-red-600">✕</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="flex items-center justify-between pt-4 border-t border-stone-300">
+        <button onclick="switchTab('stockcard')" class="text-xs text-stone-600 hover:text-stone-900 font-medium">
+          ← กลับหน้าสมุดคุมสต็อก
+        </button>
+        <div class="flex items-center gap-3">
+          <button onclick="switchTab('slipview')" class="text-xs bg-[#f4ece0] border border-stone-400 hover:bg-[#e9dfce] text-stone-800 font-bold px-4 py-2 rounded">
+            ตรวจดูใบเสร็จเบิกจริง (Preview)
+          </button>
+          <button onclick="saveAndFulfill()" class="text-xs bg-stone-900 hover:bg-stone-800 text-amber-50 font-bold px-5 py-2 rounded shadow-xs flex items-center gap-1.5">
+            <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            บันทึกจ่ายของ & ตัดสต็อก
+          </button>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ================= TAB 3: PRINT SLIP WITH OFFICIAL RUBBER STAMPS ================= -->
+    <section id="section-slipview" class="hidden space-y-6">
+      
+      <div class="flex justify-between items-center no-print bg-[#f7f2e7] p-3 rounded border border-stone-300">
+        <span class="text-xs text-stone-700 font-medium">
+          เอกสารใบเบิกฉบับพิมพ์จริง พร้อมตราประทับควบคุมสต็อก (สามารถกดพิมพ์เพื่อเก็บเข้าแฟ้มเอกสาร)
+        </span>
+        <button onclick="window.print()" class="text-xs bg-stone-800 text-white font-bold px-4 py-1.5 rounded flex items-center gap-1.5 shadow-xs">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+          พิมพ์เอกสาร (Print Ctrl+P)
+        </button>
+      </div>
+
+      <!-- Printable A4 Paper Layout -->
+      <div class="bg-white border-2 border-stone-400 p-8 max-w-3xl mx-auto shadow-sm relative">
+
+        <!-- Header -->
+        <div class="text-center border-b-2 border-stone-900 pb-4 mb-6">
+          <div class="text-xs font-serif text-stone-500 tracking-wider">บันทึกข้อความภายใน • สำนักช่าง</div>
+          <h2 class="font-heading font-bold text-2xl text-stone-900 mt-1">ใบเบิกและจ่ายวัสดุสำนักงาน</h2>
+          <div class="text-xs text-stone-600 mt-0.5">เลขที่อ้างอิง: <span class="font-mono-ledger font-bold text-stone-900" id="slipRefNo">REQ-69-10-0021</span></div>
+        </div>
+
+        <!-- Metadata Grid -->
+        <div class="grid grid-cols-2 gap-4 text-xs mb-6 pb-4 border-b border-stone-200">
+          <div class="space-y-1">
+            <div><strong>หน่วยงานที่ขอเบิก:</strong> <span id="slipDept">ฝ่ายก่อสร้างและซ่อมบำรุง (สำนักช่าง)</span></div>
+            <div><strong>ผู้ขอเบิก:</strong> <span id="slipRequester">นายวิชัย สุวรรณโชติ (นายช่างโยธาปฏิบัติงาน)</span></div>
+            <div><strong>วัตถุประสงค์:</strong> <span id="slipPurpose">ใช้สำหรับจัดทำแบบแปลนและเอกสารโครงการปรับปรุงถนนสายหลัก</span></div>
+          </div>
+          <div class="space-y-1 text-right">
+            <div><strong>วันที่ขอเบิก:</strong> <span id="slipDate">๕ ตุลาคม ๒๕๖๙</span></div>
+            <div><strong>สถานที่จ่าย:</strong> คลังวัสดุ สำนักช่าง</div>
+            <div><strong>เจ้าหน้าที่ผู้จ่าย:</strong> <span id="slipFulfilledBy">นายสมบัติ คลังพัสดุ (นายช่างโยธาชำนาญงาน)</span></div>
+          </div>
+        </div>
+
+        <!-- Table of Issued Items -->
+        <table class="w-full border-collapse border border-stone-400 text-xs mb-8">
+          <thead>
+            <tr class="bg-stone-100 font-bold border-b border-stone-400 text-stone-800">
+              <th class="border border-stone-400 py-2 px-2 w-12 text-center">ลำดับ</th>
+              <th class="border border-stone-400 py-2 px-3 w-28 text-center font-mono-ledger">รหัส</th>
+              <th class="border border-stone-400 py-2 px-4">รายการวัสดุ</th>
+              <th class="border border-stone-400 py-2 px-3 w-20 text-center">ขอเบิก</th>
+              <th class="border border-stone-400 py-2 px-3 w-20 text-center font-bold">จ่ายจริง</th>
+            </tr>
+          </thead>
+          <tbody id="slipItemsBody">
+            <tr>
+              <td class="border border-stone-300 py-2 px-2 text-center font-mono-ledger">๑</td>
+              <td class="border border-stone-300 py-2 px-3 text-center font-mono-ledger font-semibold">OFF-PPR-A4</td>
+              <td class="border border-stone-300 py-2 px-4">กระดาษถ่ายเอกสาร A4 80 แกรม Double A</td>
+              <td class="border border-stone-300 py-2 px-3 text-center font-mono-ledger">2</td>
+              <td class="border border-stone-300 py-2 px-3 text-center font-mono-ledger font-bold text-stone-900">2</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr class="bg-stone-50 font-bold">
+              <td colspan="4" class="border border-stone-400 py-2 px-4 text-right">รวมจำนวนวัสดุที่ส่งมอบ:</td>
+              <td class="border border-stone-400 py-2 px-3 text-center font-mono-ledger font-bold text-blue-900" id="slipTotalQty">2</td>
+            </tr>
+          </tfoot>
+        </table>
+
+        <!-- Signatures (3 Parties) -->
+        <div class="grid grid-cols-3 gap-6 pt-8 text-center text-xs">
+          <div class="space-y-1">
+            <div class="w-36 border-b border-stone-500 mx-auto mb-2"></div>
+            <div class="font-bold text-stone-800" id="sigRequester">(นายวิชัย สุวรรณโชติ)</div>
+            <div class="text-[11px] text-stone-500">ผู้ขอรับวัสดุ</div>
+            <div class="text-[10px] text-stone-400 font-mono-ledger">วันที่ ...../...../.....</div>
+          </div>
+
+          <div class="space-y-1">
+            <div class="w-36 border-b border-stone-500 mx-auto mb-2"></div>
+            <div class="font-bold text-stone-800" id="sigApprover">(นายชำนาญ การช่าง)</div>
+            <div class="text-[11px] text-stone-500">หัวหน้าฝ่าย / ผู้สั่งจ่าย</div>
+            <div class="text-[10px] text-stone-400 font-mono-ledger">วันที่ ...../...../.....</div>
+          </div>
+
+          <div class="space-y-1">
+            <div class="w-36 border-b border-stone-500 mx-auto mb-2"></div>
+            <div class="font-bold text-stone-800" id="sigFulfilled">(นายสมบัติ คลังพัสดุ)</div>
+            <div class="text-[11px] text-stone-500">เจ้าหน้าที่คลังผู้จ่ายพัสดุ</div>
+            <div class="text-[10px] text-stone-400 font-mono-ledger">วันที่ ...../...../.....</div>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ================= TAB 4: AI BILL SCANNER (ตรวจรับวัสดุเข้าคลัง) ================= -->
+    <section id="section-scanbill" class="hidden space-y-6">
+      
+      <!-- Top Title & Description -->
+      <div class="border-b-2 border-stone-800 pb-3 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="text-[11px] font-mono-ledger text-emerald-800 uppercase tracking-widest bg-emerald-100 px-2 py-0.5 rounded font-bold border border-emerald-300">AI SMART SCANNER READY</span>
+            <span class="text-xs text-stone-500 font-mono-ledger">เอกสารตัวอย่าง: DS-6908280002</span>
+          </div>
+          <h2 class="text-xl font-heading font-bold text-stone-900 mt-1">ระบบตรวจรับวัสดุเข้าคลังด้วยการสแกนบิล (Bill-to-Stock)</h2>
+          <p class="text-xs text-stone-600 mt-0.5">นำเข้าวัสดุจากการจัดซื้อเข้าคลังอัตโนมัติ โดยไม่ต้องพิมพ์คีย์ข้อมูลทีละบรรทัด</p>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <label class="cursor-pointer text-xs bg-white border border-stone-300 hover:bg-stone-50 text-stone-800 font-bold px-3 py-2 rounded flex items-center gap-1.5 shadow-2xs">
+            <svg class="w-4 h-4 text-stone-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+            อัปโหลดรูปบิลใหม่ / PDF
+            <input type="file" accept="image/*,application/pdf" class="hidden" onchange="alert('ระบบพร้อมจำลองการอ่านไฟล์บิลที่อัปโหลด...')">
+          </label>
+        </div>
+      </div>
+
+      <!-- Sample Bill Switcher Bar -->
+      <div class="flex flex-wrap items-center justify-between gap-3 bg-[#f3ecdf] p-2.5 rounded-lg border border-stone-300">
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-xs font-bold text-stone-800 flex items-center gap-1">
+            <svg class="w-4 h-4 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            เลือกดูตัวอย่างเอกสารสแกน:
+          </span>
+          <button id="bill-btn-1" onclick="loadBillSample(1)" class="bill-btn active px-3.5 py-1.5 text-xs font-bold rounded bg-stone-900 text-white shadow-xs transition flex items-center gap-1.5 cursor-pointer">
+            <span>บิลที่ ๑:</span> หมึกพิมพ์ (ตากคอมพิวเตอร์ DS-6908280002)
+          </button>
+          <button id="bill-btn-2" onclick="loadBillSample(2)" class="bill-btn px-3.5 py-1.5 text-xs font-bold rounded bg-white text-stone-700 hover:bg-stone-100 border border-stone-300 transition flex items-center gap-1.5 cursor-pointer">
+            <span>บิลที่ ๒:</span> แฟ้มเอกสาร (ใบส่งของ A00603)
+          </button>
+          <button id="bill-btn-3" onclick="loadBillSample(3)" class="bill-btn px-3.5 py-1.5 text-xs font-bold rounded bg-white text-amber-900 hover:bg-amber-100 border border-amber-300 transition flex items-center gap-1.5 cursor-pointer">
+            <span>บิลที่ ๓:</span> ✍️ บิลมีลายมือเขียน (ตากคอมฯ DS-6909100001)
+          </button>
+        </div>
+        <span class="text-[11px] text-stone-600 font-mono-ledger bg-white/70 px-2.5 py-1 rounded border border-stone-200" id="currentBillLabel">กำลังแสดง: บิลตากคอมพิวเตอร์ (หมึกพิมพ์ ๗ รายการ)</span>
+      </div>
+
+      <!-- Two-Column Desk Inspection Layout -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- Left Column: Scanned Bill Image Preview (Col 5) -->
+        <div class="lg:col-span-5 space-y-3">
+          <div class="flex items-center justify-between text-xs font-bold text-stone-700">
+            <span>ภาพเอกสารต้นฉบับ (Scanned Bill Preview)</span>
+            <span class="text-[11px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">✓ ตรวจอ่านความชัดเจน 100%</span>
+          </div>
+
+          <!-- Bill 1: Simulated Paper Invoice Document (ตากคอมพิวเตอร์) -->
+          <div id="bill-preview-1" class="bg-white border-2 border-stone-300 p-5 rounded-lg shadow-sm text-[11px] font-sans leading-tight relative overflow-hidden select-none">
+            <!-- Scan effect line -->
+            <div class="absolute top-0 left-0 right-0 h-1 bg-emerald-500/80 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse"></div>
+
+            <!-- Bill Header -->
+            <div class="flex items-start justify-between border-b border-stone-300 pb-3 mb-3">
+              <div class="flex items-start gap-2.5">
+                <div class="w-8 h-8 rounded bg-blue-700 text-white font-bold flex items-center justify-center text-xs flex-shrink-0">
+                  TC
+                </div>
+                <div>
+                  <div class="font-bold text-stone-900 text-xs">ห้างหุ้นส่วนจำกัด ตากคอมพิวเตอร์ (สำนักงานใหญ่)</div>
+                  <div class="text-[10px] text-stone-500">6/33-34 ถนนพหลโยธิน ตำบลระแหง อำเภอเมือง จังหวัดตาก</div>
+                  <div class="text-[10px] text-stone-500">เลขประจำตัวผู้เสียภาษี: 0633538000055</div>
+                </div>
+              </div>
+              <div class="text-right">
+                <div class="font-bold text-stone-900 text-xs">ใบส่งสินค้าชั่วคราว</div>
+                <div class="font-mono-ledger text-blue-900 font-bold text-[11px]">DS-6908280002</div>
+                <div class="text-[10px] text-stone-500">วันที่: 28/08/69</div>
+              </div>
+            </div>
+
+            <!-- Customer Meta -->
+            <div class="bg-stone-50 p-2.5 rounded border border-stone-200 mb-3 text-[10px]">
+              <div><strong>ผู้สั่งซื้อ:</strong> สำนักงาน องค์การบริหารส่วนจังหวัดตาก (สำนักงานใหญ่)</div>
+              <div><strong>หน่วยงานรับของ:</strong> สำนักช่าง • พนักงานขาย: T01 ใบเฟิร์น</div>
+            </div>
+
+            <!-- Simplified Bill Lines in Mini View -->
+            <div class="border border-stone-200 rounded overflow-hidden">
+              <table class="w-full text-left text-[10px]">
+                <thead class="bg-stone-100 font-semibold border-b border-stone-200">
+                  <tr>
+                    <th class="py-1 px-1.5 w-6 text-center">#</th>
+                    <th class="py-1 px-1.5">รหัสสินค้า / รายละเอียด</th>
+                    <th class="py-1 px-1.5 w-12 text-center">จำนวน</th>
+                    <th class="py-1 px-1.5 w-16 text-right">รวมเงิน</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-stone-100">
+                  <tr>
+                    <td class="py-1 px-1.5 text-center">1</td>
+                    <td class="py-1 px-1.5 font-mono">196548611188 HP 938 Black</td>
+                    <td class="py-1 px-1.5 text-center font-bold">4.00</td>
+                    <td class="py-1 px-1.5 text-right font-mono">6,560.00</td>
+                  </tr>
+                  <tr>
+                    <td class="py-1 px-1.5 text-center">2</td>
+                    <td class="py-1 px-1.5 font-mono">196548611096 HP 938 Cyan</td>
+                    <td class="py-1 px-1.5 text-center font-bold">2.00</td>
+                    <td class="py-1 px-1.5 text-right font-mono">2,200.00</td>
+                  </tr>
+                  <tr>
+                    <td class="py-1 px-1.5 text-center">3</td>
+                    <td class="py-1 px-1.5 font-mono">196548611126 HP 938 Magenta</td>
+                    <td class="py-1 px-1.5 text-center font-bold">2.00</td>
+                    <td class="py-1 px-1.5 text-right font-mono">2,200.00</td>
+                  </tr>
+                  <tr>
+                    <td class="py-1 px-1.5 text-center">4</td>
+                    <td class="py-1 px-1.5 font-mono">196548611157 HP 938 Yellow</td>
+                    <td class="py-1 px-1.5 text-center font-bold">2.00</td>
+                    <td class="py-1 px-1.5 text-right font-mono">2,200.00</td>
+                  </tr>
+                  <tr>
+                    <td class="py-1 px-1.5 text-center">5</td>
+                    <td class="py-1 px-1.5 font-mono">4977766767675 ตลับหมึก Brother LC-3619XL BK</td>
+                    <td class="py-1 px-1.5 text-center font-bold">5.00</td>
+                    <td class="py-1 px-1.5 text-right font-mono">4,200.00</td>
+                  </tr>
+                  <tr>
+                    <td class="py-1 px-1.5 text-center">6</td>
+                    <td class="py-1 px-1.5 font-mono">4977766767682 ตลับหมึก Brother LC-3619XL C</td>
+                    <td class="py-1 px-1.5 text-center font-bold">3.00</td>
+                    <td class="py-1 px-1.5 text-right font-mono">2,175.00</td>
+                  </tr>
+                  <tr>
+                    <td class="py-1 px-1.5 text-center">7</td>
+                    <td class="py-1 px-1.5 font-mono">4977766767705 ตลับหมึก Brother LC-3619XL Y</td>
+                    <td class="py-1 px-1.5 text-center font-bold">5.00</td>
+                    <td class="py-1 px-1.5 text-right font-mono">3,625.00</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Bill Total Footer -->
+            <div class="mt-3 pt-2 border-t border-stone-200 flex justify-between font-bold text-xs">
+              <span>ยอดรวมทั้งสิ้น (๒๓ ชิ้น):</span>
+              <span class="text-blue-900 font-mono-ledger">23,160.00 บาท</span>
+            </div>
+          </div>
+
+          <!-- Bill 2: Simulated Paper Delivery Note (ใบส่งของ A00603) -->
+          <div id="bill-preview-2" class="hidden bg-white border-2 border-stone-300 p-5 rounded-lg shadow-sm text-[11px] font-sans leading-tight relative overflow-hidden select-none">
+            <!-- Scan effect line -->
+            <div class="absolute top-0 left-0 right-0 h-1 bg-emerald-500/80 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse"></div>
+
+            <!-- Dark Top Header Bar (Authentic PDF style) -->
+            <div class="bg-stone-800 text-white p-3 rounded mb-3">
+              <div class="flex justify-between items-start mb-2">
+                <div class="text-[10px] text-stone-300 tracking-wider">เอกสารส่งมอบพัสดุ/สินค้า</div>
+                <div class="font-bold text-sm text-right text-stone-100">ใบส่งของ <span class="text-xs font-normal text-stone-300">ต้นฉบับ</span></div>
+              </div>
+              <div class="grid grid-cols-4 gap-1 text-[10px] text-stone-200 border-t border-stone-700 pt-2 font-mono-ledger">
+                <div>เลขที่: <span class="font-bold text-white">A00603</span></div>
+                <div>วันที่: <span class="text-white">28/09/2569</span></div>
+                <div>ครบกำหนด: <span class="text-stone-300">28/10/2569</span></div>
+                <div class="text-right">รวม: <span class="font-bold text-amber-300">855.00</span></div>
+              </div>
+            </div>
+
+            <!-- Customer Details (อบจ. ตาก กองช่าง) -->
+            <div class="bg-stone-50 p-2.5 rounded border border-stone-200 mb-3 text-[10px] space-y-0.5">
+              <div class="font-bold text-stone-900">ลูกค้า: องค์การบริหารส่วนจังหวัดตาก (กองช่าง)</div>
+              <div class="text-stone-600">999 หมู่ 9 ถนนจรดวิถีถ่อง ตำบลน้ำรึม อำเภอเมืองตาก จังหวัดตาก 63000</div>
+              <div class="text-stone-500 font-mono-ledger">เลขประจำตัวผู้เสียภาษี: 0994000487002</div>
+            </div>
+
+            <!-- Line Items Table -->
+            <div class="border border-stone-200 rounded overflow-hidden mb-3">
+              <table class="w-full text-left text-[10px]">
+                <thead class="bg-stone-100 font-semibold border-b border-stone-200">
+                  <tr>
+                    <th class="py-1 px-1.5 w-6 text-center">#</th>
+                    <th class="py-1 px-2">รายละเอียด</th>
+                    <th class="py-1 px-1.5 w-16 text-center">จำนวน</th>
+                    <th class="py-1 px-1.5 w-16 text-right">ราคาต่อหน่วย</th>
+                    <th class="py-1 px-1.5 w-16 text-right">ยอดรวม</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-stone-100">
+                  <tr>
+                    <td class="py-1.5 px-1.5 text-center font-mono-ledger">1</td>
+                    <td class="py-1.5 px-2 font-medium text-stone-900">แฟ้มสันกว้าง 3 นิ้ว 112F</td>
+                    <td class="py-1.5 px-1.5 text-center font-bold">9 แฟ้ม</td>
+                    <td class="py-1.5 px-1.5 text-right font-mono-ledger">95.00</td>
+                    <td class="py-1.5 px-1.5 text-right font-mono-ledger font-bold text-stone-900">855.00</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Total Amount Bar (Dark Box like real PDF) -->
+            <div class="flex items-center justify-between bg-stone-100 p-2 rounded border border-stone-200 mb-3 text-[10px]">
+              <div>
+                <div class="font-bold text-stone-800">จำนวนเงิน ( แปดร้อยห้าสิบห้าบาทถ้วน )</div>
+                <div class="text-[9px] text-stone-400 italic">เอกสารนี้เป็นใบส่งของ มิใช่ใบกำกับภาษี</div>
+              </div>
+              <div class="bg-stone-800 text-white px-2.5 py-1 rounded text-right font-mono-ledger font-bold text-xs">
+                855.00 บาท
+              </div>
+            </div>
+
+            <!-- Signature footer -->
+            <div class="grid grid-cols-2 gap-2 text-[9px] text-stone-500 pt-2 border-t border-stone-200">
+              <div>
+                <div>ผู้รับสินค้า:</div>
+                <div class="font-semibold text-stone-800 mt-0.5">ในนาม อบจ.ตาก (กองช่าง)</div>
+              </div>
+              <div class="text-right">
+                <div>ผู้ส่งสินค้า:</div>
+                <div class="text-blue-900 italic font-semibold mt-0.5">✓ เซ็นชื่อส่งมอบแล้ว</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bill 3: Tak Computer with Handwritten Addition (DS-6909100001) -->
+          <div id="bill-preview-3" class="hidden bg-white border-2 border-stone-300 p-5 rounded-lg shadow-sm text-[11px] font-sans leading-tight relative overflow-hidden select-none">
+            <!-- Scan effect line -->
+            <div class="absolute top-0 left-0 right-0 h-1 bg-emerald-500/80 shadow-[0_0_8px_rgba(16,185,129,0.8)] animate-pulse"></div>
+
+            <!-- Bill Header -->
+            <div class="flex items-start justify-between border-b border-stone-300 pb-3 mb-3">
+              <div class="flex items-start gap-2.5">
+                <div class="w-8 h-8 rounded bg-blue-700 text-white font-bold flex items-center justify-center text-xs flex-shrink-0">
+                  TC
+                </div>
+                <div>
+                  <div class="font-bold text-stone-900 text-xs">ห้างหุ้นส่วนจำกัด ตากคอมพิวเตอร์ (สำนักงานใหญ่)</div>
+                  <div class="text-[10px] text-stone-500">6/33-34 ถนนพหลโยธิน ตำบลระแหง อำเภอเมือง จังหวัดตาก</div>
+                  <div class="text-[10px] text-stone-500">เลขประจำตัวผู้เสียภาษี: 0633538000055</div>
+                </div>
+              </div>
+              <div class="text-right">
+                <div class="font-bold text-stone-900 text-xs">ใบส่งสินค้าชั่วคราว/ใบแจ้งหนี้</div>
+                <div class="font-mono-ledger text-blue-900 font-bold text-[11px]">DS-6909100001</div>
+                <div class="text-[10px] text-stone-500">วันที่: 10/09/69</div>
+              </div>
+            </div>
+
+            <!-- Customer Meta -->
+            <div class="bg-stone-50 p-2.5 rounded border border-stone-200 mb-3 text-[10px]">
+              <div><strong>ลูกค้า:</strong> สำนักงาน องค์การบริหารส่วนจังหวัดตาก (สำนักงานใหญ่)</div>
+              <div><strong>ที่อยู่:</strong> 999 หมู่ 9 ต.น้ำรึม อ.เมือง จ.ตาก 63000 • <strong>พนักงานขาย:</strong> T01 ใบเฟิร์น</div>
+            </div>
+
+            <!-- Table with Printed Row + Handwritten Row -->
+            <div class="border border-stone-200 rounded overflow-hidden mb-3">
+              <table class="w-full text-left text-[10px]">
+                <thead class="bg-stone-100 font-semibold border-b border-stone-200">
+                  <tr>
+                    <th class="py-1 px-1.5 w-6 text-center">#</th>
+                    <th class="py-1 px-1.5">รหัสสินค้า / รายละเอียด</th>
+                    <th class="py-1 px-1.5 w-16 text-center">จำนวน</th>
+                    <th class="py-1 px-1.5 w-16 text-right">ราคา/หน่วย</th>
+                    <th class="py-1 px-1.5 w-16 text-right">รวมเงิน</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-stone-100">
+                  <!-- Row 1: Printed Line Item -->
+                  <tr>
+                    <td class="py-1.5 px-1.5 text-center font-mono-ledger">1</td>
+                    <td class="py-1.5 px-1.5 font-mono text-[10px]">4977766829632 BROTHER TN-269 Black</td>
+                    <td class="py-1.5 px-1.5 text-center font-bold">1.00 กล่อง</td>
+                    <td class="py-1.5 px-1.5 text-right font-mono-ledger">2,290.00</td>
+                    <td class="py-1.5 px-1.5 text-right font-mono-ledger font-bold">2,290.00</td>
+                  </tr>
+
+                  <!-- Row 2: Simulated Realistic Blue Pen Handwriting -->
+                  <tr class="bg-blue-50/40 relative">
+                    <td class="py-2 px-1.5 text-center text-blue-900 font-bold text-xs">✍️</td>
+                    <td colspan="4" class="py-2 px-2">
+                      <div class="flex items-center justify-between border-2 border-dashed border-blue-400 bg-blue-100/60 p-1.5 rounded -rotate-0.5 shadow-2xs">
+                        <div class="font-serif italic font-bold text-blue-900 text-xs tracking-wide flex items-center gap-1.5">
+                          <span>มาพร้อม หมึก brother 6319 ดำ 5 ตลับ</span>
+                        </div>
+                        <div class="text-[9px] text-blue-800 font-mono-ledger bg-white px-1.5 py-0.5 rounded border border-blue-300 flex items-center gap-1">
+                          <span>ลายเซ็นกำกับ:</span>
+                          <span class="font-serif italic font-bold text-blue-950">✓ สิทธิชัย</span>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Bill Total Footer -->
+            <div class="bg-stone-50 p-2 rounded border border-stone-200 flex justify-between font-bold text-xs mb-3">
+              <span>ยอดรวมตามบิลพิมพ์ (๑ รายการ):</span>
+              <span class="text-blue-900 font-mono-ledger">2,290.00 บาท</span>
+            </div>
+
+            <!-- Signatures -->
+            <div class="grid grid-cols-3 gap-1 text-[8.5px] text-stone-500 pt-2 border-t border-stone-200 text-center">
+              <div>
+                <div>ผู้รับสินค้า:</div>
+                <div class="font-semibold text-stone-800 mt-1">ชัยวุฒิ / 10/09/69</div>
+              </div>
+              <div>
+                <div>ผู้ส่งสินค้า:</div>
+                <div class="font-semibold text-stone-800 mt-1">ใบเฟิร์น (T01)</div>
+              </div>
+              <div>
+                <div>ผู้อนุมัติ:</div>
+                <div class="font-semibold text-stone-800 mt-1">กมลรัตน์</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right Column: AI Extraction & Verified Table (Col 7) -->
+        <div class="lg:col-span-7 space-y-4">
+          
+          <!-- Summary Header of Extracted Data -->
+          <div class="bg-[#faf6ee] border border-stone-300 p-4 rounded-lg">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+              <div>
+                <span class="text-stone-500 block text-[11px]">คลังปลายทาง (เปลี่ยนทุกรายการได้):</span>
+                <select id="masterWarehouseSelect" onchange="changeAllWarehouses(this.value)" class="mt-0.5 bg-white border border-emerald-400 font-bold text-emerald-900 text-xs px-2.5 py-1 rounded shadow-xs focus:ring-1 focus:ring-emerald-500 cursor-pointer">
+                  <option value="วัสดุคอมพิวเตอร์" selected>วัสดุคอมพิวเตอร์</option>
+                  <option value="ซองจดหมาย">ซองจดหมาย</option>
+                  <option value="วัสดุรวม">วัสดุรวม</option>
+                  <option value="วัสดุสำนักงาน">วัสดุสำนักงาน</option>
+                  <option value="วัสดุงานบ้าน">วัสดุงานบ้าน</option>
+                </select>
+              </div>
+              <div>
+                <span class="text-stone-500 block text-[11px]">เลขที่บิลอ้างอิง:</span>
+                <span class="font-mono-ledger font-bold text-stone-900 text-sm" id="scanRefNo">DS-6908280002</span>
+              </div>
+              <div>
+                <span class="text-stone-500 block text-[11px]">หน่วยงาน / ผู้จำหน่าย:</span>
+                <span class="font-bold text-stone-800" id="scanSupplier">หจก. ตากคอมพิวเตอร์</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Feature 2: Detected Handwritten Notes Banner (Shown on Bill 3) -->
+          <div id="handwritingAlertBox" class="hidden bg-amber-50 border-2 border-amber-300 p-3 rounded-lg flex flex-wrap items-center justify-between gap-3 shadow-2xs">
+            <div class="flex items-start gap-2.5">
+              <div class="w-8 h-8 rounded-full bg-amber-200 text-amber-900 flex items-center justify-center flex-shrink-0 font-bold text-sm">
+                ✍️
+              </div>
+              <div>
+                <div class="text-xs font-bold text-amber-950 flex items-center gap-1.5">
+                  <span>ตรวจพบข้อความลายมือเขียนเพิ่มเติมบนบิล:</span>
+                  <span class="text-[10px] bg-amber-200 text-amber-900 font-bold px-1.5 py-0.2 rounded border border-amber-300">AI OCR Detection</span>
+                </div>
+                <div class="text-xs font-serif italic text-blue-900 mt-0.5 font-bold">
+                  "มาพร้อม หมึก brother 6319 ดำ 5 ตลับ" (มีลายเซ็นกำกับ)
+                </div>
+                <div class="text-[10px] text-stone-500 mt-0.5">
+                  * เขียนด้วยปากกาน้ำเงินนอกเหนือจากตารางพิมพ์ทางการ ท่านต้องการรับรายการนี้เข้าคลังด้วยหรือไม่?
+                </div>
+              </div>
+            </div>
+            <button id="addHandwrittenBtn" type="button" onclick="addHandwrittenItem()" class="bg-amber-700 hover:bg-amber-800 text-white font-bold text-xs px-3 py-2 rounded flex items-center gap-1.5 transition flex-shrink-0 cursor-pointer shadow-xs">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+              + แปลงลายมือนี้เป็นรายการรับเข้า (+๕ ตลับ)
+            </button>
+          </div>
+
+          <!-- Extracted Line Items Table -->
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-stone-800" id="scanItemsHeaderNotice">รายการวัสดุที่ AI ถอดได้ (พร้อมบันทึกเข้าคลัง ๗ รายการ):</span>
+                <span class="text-[11px] text-stone-500 font-mono-ledger">* ตรวจสอบยอดแล้วสามารถกดรับเข้าได้ทันที</span>
+              </div>
+              <button type="button" onclick="addManualRow()" class="bg-white hover:bg-stone-100 text-stone-800 font-bold text-xs px-2.5 py-1.5 rounded border border-stone-300 shadow-2xs flex items-center gap-1 transition cursor-pointer">
+                <svg class="w-3.5 h-3.5 text-stone-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                + เพิ่มแถวรายการเอง
+              </button>
+            </div>
+
+            <div class="border border-stone-300 rounded overflow-hidden">
+              <table class="w-full text-left stock-card-table border-collapse text-xs" id="scannedItemsTable">
+                <thead>
+                  <tr>
+                    <th class="py-2 px-2 w-8 text-center font-mono-ledger">#</th>
+                    <th class="py-2 px-3">ชื่อรายการวัสดุ</th>
+                    <th class="py-2 px-2.5 w-36 text-center">คลังที่จะนำไปเก็บ</th>
+                    <th class="py-2 px-2.5 w-20 text-center bg-[#f0e7d5]">รับเข้า</th>
+                    <th class="py-2 px-2.5 w-24 text-right font-mono-ledger">ราคา/หน่วย</th>
+                    <th class="py-2 px-2.5 w-24 text-right font-mono-ledger">รวมเงิน</th>
+                    <th class="py-2 px-1 w-8 text-center"></th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-stone-200" id="scannedItemsTbody">
+                  <tr class="hover:bg-[#fbf7ee]">
+                    <td class="py-2 px-2 text-center font-mono-ledger">๑</td>
+                    <td class="py-2 px-3">
+                      <input type="text" class="scan-item-name w-full bg-[#fbf9f4] hover:bg-white focus:bg-white border border-stone-200 focus:border-stone-500 rounded px-2 py-1 text-xs text-stone-900 font-medium transition" value="HP 4S6X8PA 938 Black (หมึกดำ)">
+                    </td>
+                    <td class="py-2 px-2 text-center">
+                      <select class="scan-item-warehouse w-full bg-white border border-stone-300 rounded px-2 py-1 text-xs text-stone-800 font-medium cursor-pointer">
+                        <option value="วัสดุคอมพิวเตอร์" selected>วัสดุคอมพิวเตอร์</option>
+                        <option value="ซองจดหมาย">ซองจดหมาย</option>
+                        <option value="วัสดุรวม">วัสดุรวม</option>
+                        <option value="วัสดุสำนักงาน">วัสดุสำนักงาน</option>
+                        <option value="วัสดุงานบ้าน">วัสดุงานบ้าน</option>
+                      </select>
+                    </td>
+                    <td class="py-2 px-2 text-center">
+                      <input type="number" min="1" class="scan-item-qty w-14 mx-auto block text-center font-mono-ledger font-bold text-sm text-emerald-900 bg-emerald-50 border border-emerald-300 focus:border-emerald-600 rounded py-1" value="4" oninput="recalculateScanTotals()">
+                    </td>
+                    <td class="py-2 px-2.5 text-right font-mono-ledger text-stone-600 scan-item-price" data-price="1640.00">1,640.00</td>
+                    <td class="py-2 px-2.5 text-right font-mono-ledger font-semibold text-stone-900 scan-item-total">6,560.00</td>
+                  </tr>
+                  <tr class="hover:bg-[#fbf7ee]">
+                    <td class="py-2 px-2 text-center font-mono-ledger">๒</td>
+                    <td class="py-2 px-3">
+                      <input type="text" class="scan-item-name w-full bg-[#fbf9f4] hover:bg-white focus:bg-white border border-stone-200 focus:border-stone-500 rounded px-2 py-1 text-xs text-stone-900 font-medium transition" value="HP 4S6X5PA 938 Cyan (หมึกฟ้า)">
+                    </td>
+                    <td class="py-2 px-2 text-center">
+                      <select class="scan-item-warehouse w-full bg-white border border-stone-300 rounded px-2 py-1 text-xs text-stone-800 font-medium cursor-pointer">
+                        <option value="วัสดุคอมพิวเตอร์" selected>วัสดุคอมพิวเตอร์</option>
+                        <option value="ซองจดหมาย">ซองจดหมาย</option>
+                        <option value="วัสดุรวม">วัสดุรวม</option>
+                        <option value="วัสดุสำนักงาน">วัสดุสำนักงาน</option>
+                        <option value="วัสดุงานบ้าน">วัสดุงานบ้าน</option>
+                      </select>
+                    </td>
+                    <td class="py-2 px-2 text-center">
+                      <input type="number" min="1" class="scan-item-qty w-14 mx-auto block text-center font-mono-ledger font-bold text-sm text-emerald-900 bg-emerald-50 border border-emerald-300 focus:border-emerald-600 rounded py-1" value="2" oninput="recalculateScanTotals()">
+                    </td>
+                    <td class="py-2 px-2.5 text-right font-mono-ledger text-stone-600 scan-item-price" data-price="1100.00">1,100.00</td>
+                    <td class="py-2 px-2.5 text-right font-mono-ledger font-semibold text-stone-900 scan-item-total">2,200.00</td>
+                  </tr>
+                  <tr class="hover:bg-[#fbf7ee]">
+                    <td class="py-2 px-2 text-center font-mono-ledger">๓</td>
+                    <td class="py-2 px-3">
+                      <input type="text" class="scan-item-name w-full bg-[#fbf9f4] hover:bg-white focus:bg-white border border-stone-200 focus:border-stone-500 rounded px-2 py-1 text-xs text-stone-900 font-medium transition" value="HP 4S6X6PA 938 Magenta (หมึกแดง)">
+                    </td>
+                    <td class="py-2 px-2 text-center">
+                      <select class="scan-item-warehouse w-full bg-white border border-stone-300 rounded px-2 py-1 text-xs text-stone-800 font-medium cursor-pointer">
+                        <option value="วัสดุคอมพิวเตอร์" selected>วัสดุคอมพิวเตอร์</option>
+                        <option value="ซองจดหมาย">ซองจดหมาย</option>
+                        <option value="วัสดุรวม">วัสดุรวม</option>
+                        <option value="วัสดุสำนักงาน">วัสดุสำนักงาน</option>
+                        <option value="วัสดุงานบ้าน">วัสดุงานบ้าน</option>
+                      </select>
+                    </td>
+                    <td class="py-2 px-2 text-center">
+                      <input type="number" min="1" class="scan-item-qty w-14 mx-auto block text-center font-mono-ledger font-bold text-sm text-emerald-900 bg-emerald-50 border border-emerald-300 focus:border-emerald-600 rounded py-1" value="2" oninput="recalculateScanTotals()">
+                    </td>
+                    <td class="py-2 px-2.5 text-right font-mono-ledger text-stone-600 scan-item-price" data-price="1100.00">1,100.00</td>
+                    <td class="py-2 px-2.5 text-right font-mono-ledger font-semibold text-stone-900 scan-item-total">2,200.00</td>
+                  </tr>
+                  <tr class="hover:bg-[#fbf7ee]">
+                    <td class="py-2 px-2 text-center font-mono-ledger">๔</td>
+                    <td class="py-2 px-3">
+                      <input type="text" class="scan-item-name w-full bg-[#fbf9f4] hover:bg-white focus:bg-white border border-stone-200 focus:border-stone-500 rounded px-2 py-1 text-xs text-stone-900 font-medium transition" value="HP 4S6X7PA 938 Yellow (หมึกเหลือง)">
+                    </td>
+                    <td class="py-2 px-2 text-center">
+                      <select class="scan-item-warehouse w-full bg-white border border-stone-300 rounded px-2 py-1 text-xs text-stone-800 font-medium cursor-pointer">
+                        <option value="วัสดุคอมพิวเตอร์" selected>วัสดุคอมพิวเตอร์</option>
+                        <option value="ซองจดหมาย">ซองจดหมาย</option>
+                        <option value="วัสดุรวม">วัสดุรวม</option>
+                        <option value="วัสดุสำนักงาน">วัสดุสำนักงาน</option>
+                        <option value="วัสดุงานบ้าน">วัสดุงานบ้าน</option>
+                      </select>
+                    </td>
+                    <td class="py-2 px-2 text-center">
+                      <input type="number" min="1" class="scan-item-qty w-14 mx-auto block text-center font-mono-ledger font-bold text-sm text-emerald-900 bg-emerald-50 border border-emerald-300 focus:border-emerald-600 rounded py-1" value="2" oninput="recalculateScanTotals()">
+                    </td>
+                    <td class="py-2 px-2.5 text-right font-mono-ledger text-stone-600 scan-item-price" data-price="1100.00">1,100.00</td>
+                    <td class="py-2 px-2.5 text-right font-mono-ledger font-semibold text-stone-900 scan-item-total">2,200.00</td>
+                  </tr>
+                  <tr class="hover:bg-[#fbf7ee]">
+                    <td class="py-2 px-2 text-center font-mono-ledger">๕</td>
+                    <td class="py-2 px-3">
+                      <input type="text" class="scan-item-name w-full bg-[#fbf9f4] hover:bg-white focus:bg-white border border-stone-200 focus:border-stone-500 rounded px-2 py-1 text-xs text-stone-900 font-medium transition" value="ตลับหมึก Brother LC-3619XL BK (สีดำ)">
+                    </td>
+                    <td class="py-2 px-2 text-center">
+                      <select class="scan-item-warehouse w-full bg-white border border-stone-300 rounded px-2 py-1 text-xs text-stone-800 font-medium cursor-pointer">
+                        <option value="วัสดุคอมพิวเตอร์" selected>วัสดุคอมพิวเตอร์</option>
+                        <option value="ซองจดหมาย">ซองจดหมาย</option>
+                        <option value="วัสดุรวม">วัสดุรวม</option>
+                        <option value="วัสดุสำนักงาน">วัสดุสำนักงาน</option>
+                        <option value="วัสดุงานบ้าน">วัสดุงานบ้าน</option>
+                      </select>
+                    </td>
+                    <td class="py-2 px-2 text-center">
+                      <input type="number" min="1" class="scan-item-qty w-14 mx-auto block text-center font-mono-ledger font-bold text-sm text-emerald-900 bg-emerald-50 border border-emerald-300 focus:border-emerald-600 rounded py-1" value="5" oninput="recalculateScanTotals()">
+                    </td>
+                    <td class="py-2 px-2.5 text-right font-mono-ledger text-stone-600 scan-item-price" data-price="840.00">840.00</td>
+                    <td class="py-2 px-2.5 text-right font-mono-ledger font-semibold text-stone-900 scan-item-total">4,200.00</td>
+                  </tr>
+                  <tr class="hover:bg-[#fbf7ee]">
+                    <td class="py-2 px-2 text-center font-mono-ledger">๖</td>
+                    <td class="py-2 px-3">
+                      <input type="text" class="scan-item-name w-full bg-[#fbf9f4] hover:bg-white focus:bg-white border border-stone-200 focus:border-stone-500 rounded px-2 py-1 text-xs text-stone-900 font-medium transition" value="ตลับหมึก Brother LC-3619XL C (สีฟ้า)">
+                    </td>
+                    <td class="py-2 px-2 text-center">
+                      <select class="scan-item-warehouse w-full bg-white border border-stone-300 rounded px-2 py-1 text-xs text-stone-800 font-medium cursor-pointer">
+                        <option value="วัสดุคอมพิวเตอร์" selected>วัสดุคอมพิวเตอร์</option>
+                        <option value="ซองจดหมาย">ซองจดหมาย</option>
+                        <option value="วัสดุรวม">วัสดุรวม</option>
+                        <option value="วัสดุสำนักงาน">วัสดุสำนักงาน</option>
+                        <option value="วัสดุงานบ้าน">วัสดุงานบ้าน</option>
+                      </select>
+                    </td>
+                    <td class="py-2 px-2 text-center">
+                      <input type="number" min="1" class="scan-item-qty w-14 mx-auto block text-center font-mono-ledger font-bold text-sm text-emerald-900 bg-emerald-50 border border-emerald-300 focus:border-emerald-600 rounded py-1" value="3" oninput="recalculateScanTotals()">
+                    </td>
+                    <td class="py-2 px-2.5 text-right font-mono-ledger text-stone-600 scan-item-price" data-price="725.00">725.00</td>
+                    <td class="py-2 px-2.5 text-right font-mono-ledger font-semibold text-stone-900 scan-item-total">2,175.00</td>
+                  </tr>
+                  <tr class="hover:bg-[#fbf7ee]">
+                    <td class="py-2 px-2 text-center font-mono-ledger">๗</td>
+                    <td class="py-2 px-3">
+                      <input type="text" class="scan-item-name w-full bg-[#fbf9f4] hover:bg-white focus:bg-white border border-stone-200 focus:border-stone-500 rounded px-2 py-1 text-xs text-stone-900 font-medium transition" value="ตลับหมึก Brother LC-3619XLY (สีเหลือง)">
+                    </td>
+                    <td class="py-2 px-2 text-center">
+                      <select class="scan-item-warehouse w-full bg-white border border-stone-300 rounded px-2 py-1 text-xs text-stone-800 font-medium cursor-pointer">
+                        <option value="วัสดุคอมพิวเตอร์" selected>วัสดุคอมพิวเตอร์</option>
+                        <option value="ซองจดหมาย">ซองจดหมาย</option>
+                        <option value="วัสดุรวม">วัสดุรวม</option>
+                        <option value="วัสดุสำนักงาน">วัสดุสำนักงาน</option>
+                        <option value="วัสดุงานบ้าน">วัสดุงานบ้าน</option>
+                      </select>
+                    </td>
+                    <td class="py-2 px-2 text-center">
+                      <input type="number" min="1" class="scan-item-qty w-14 mx-auto block text-center font-mono-ledger font-bold text-sm text-emerald-900 bg-emerald-50 border border-emerald-300 focus:border-emerald-600 rounded py-1" value="5" oninput="recalculateScanTotals()">
+                    </td>
+                    <td class="py-2 px-2.5 text-right font-mono-ledger text-stone-600 scan-item-price" data-price="725.00">725.00</td>
+                    <td class="py-2 px-2.5 text-right font-mono-ledger font-semibold text-stone-900 scan-item-total">3,625.00</td>
+                  </tr>
+                </tbody>
+                <tfoot class="border-t-2 border-stone-300">
+                  <tr class="bg-stone-100 font-bold">
+                    <td colspan="3" class="py-2 px-3 text-right">รวมจำนวนวัสดุรับเข้าทั้งสิ้น:</td>
+                    <td class="py-2 px-2.5 text-center font-mono-ledger text-sm text-emerald-900 font-extrabold" id="scanTotalQty">23</td>
+                    <td class="py-2 px-2.5 text-right text-stone-500">ยอดรวมเงิน:</td>
+                    <td class="py-2 px-2.5 text-right font-mono-ledger text-blue-900" id="scanTotalAmount">23,160.00</td>
+                    <td></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+
+          <!-- Bottom Action Buttons -->
+          <div class="flex items-center justify-between pt-3 border-t border-stone-200">
+            <div class="text-[11px] text-stone-500" id="scanNoticeText">
+              * แก้ไขชื่อรายการ, จำนวนรับเข้า หรือเลือกคลังจัดเก็บของแต่ละชิ้นได้ตามต้องการ
+            </div>
+            <button onclick="confirmScanRestock()" class="bg-emerald-800 hover:bg-emerald-900 text-white font-bold text-xs px-5 py-2.5 rounded shadow-sm flex items-center gap-2 transition cursor-pointer">
+              <svg class="w-4 h-4 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+              ✓ ยืนยันตรวจรับ & บันทึกเข้าคลังวัสดุ
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <script>
+    function switchTab(tabName) {
+      document.getElementById('section-stockcard').classList.add('hidden');
+      document.getElementById('section-issueform').classList.add('hidden');
+      document.getElementById('section-slipview').classList.add('hidden');
+      const scanSec = document.getElementById('section-scanbill');
+      if (scanSec) scanSec.classList.add('hidden');
+
+      document.getElementById('tab-btn-stockcard').classList.remove('active');
+      document.getElementById('tab-btn-issueform').classList.remove('active');
+      document.getElementById('tab-btn-slipview').classList.remove('active');
+      const scanBtn = document.getElementById('tab-btn-scanbill');
+      if (scanBtn) scanBtn.classList.remove('active');
+
+      const targetSec = document.getElementById('section-' + tabName);
+      if (targetSec) targetSec.classList.remove('hidden');
+      const targetBtn = document.getElementById('tab-btn-' + tabName);
+      if (targetBtn) targetBtn.classList.add('active');
+    }
+
+    let currentSampleIndex = 1;
+    let handwrittenAdded = false;
+
+    function loadBillSample(index) {
+      currentSampleIndex = index;
+      handwrittenAdded = false;
+      
+      const btn1 = document.getElementById('bill-btn-1');
+      const btn2 = document.getElementById('bill-btn-2');
+      const btn3 = document.getElementById('bill-btn-3');
+      const preview1 = document.getElementById('bill-preview-1');
+      const preview2 = document.getElementById('bill-preview-2');
+      const preview3 = document.getElementById('bill-preview-3');
+      const handwritingBox = document.getElementById('handwritingAlertBox');
+      const currentBillLabel = document.getElementById('currentBillLabel');
+      const noticeHeader = document.getElementById('scanItemsHeaderNotice');
+
+      // Reset button styles
+      [btn1, btn2, btn3].forEach(b => {
+        if (b) b.className = 'bill-btn px-3.5 py-1.5 text-xs font-bold rounded bg-white text-stone-700 hover:bg-stone-100 border border-stone-300 transition flex items-center gap-1.5 cursor-pointer';
+      });
+
+      // Reset previews
+      [preview1, preview2, preview3].forEach(p => {
+        if (p) p.classList.add('hidden');
+      });
+
+      if (index === 1) {
+        btn1.className = 'bill-btn active px-3.5 py-1.5 text-xs font-bold rounded bg-stone-900 text-white shadow-xs transition flex items-center gap-1.5 cursor-pointer';
+        preview1.classList.remove('hidden');
+        if (handwritingBox) handwritingBox.classList.add('hidden');
+        currentBillLabel.innerText = 'กำลังแสดง: บิลตากคอมพิวเตอร์ (หมึกพิมพ์ ๗ รายการ)';
+        if (noticeHeader) noticeHeader.innerText = 'รายการวัสดุที่ AI ถอดได้ (พร้อมบันทึกเข้าคลัง ๗ รายการ):';
+
+        // Update Header Meta
+        document.getElementById('masterWarehouseSelect').value = 'วัสดุคอมพิวเตอร์';
+        document.getElementById('scanRefNo').innerText = 'DS-6908280002';
+        document.getElementById('scanSupplier').innerText = 'หจก. ตากคอมพิวเตอร์';
+
+        // 7 Toner items
+        const items = [
+          { name: 'HP 4S6X8PA 938 Black (หมึกดำ)', wh: 'วัสดุคอมพิวเตอร์', qty: 4, price: 1640.00, total: 6560.00 },
+          { name: 'HP 4S6X5PA 938 Cyan (หมึกฟ้า)', wh: 'วัสดุคอมพิวเตอร์', qty: 2, price: 1100.00, total: 2200.00 },
+          { name: 'HP 4S6X6PA 938 Magenta (หมึกแดง)', wh: 'วัสดุคอมพิวเตอร์', qty: 2, price: 1100.00, total: 2200.00 },
+          { name: 'HP 4S6X7PA 938 Yellow (หมึกเหลือง)', wh: 'วัสดุคอมพิวเตอร์', qty: 2, price: 1100.00, total: 2200.00 },
+          { name: 'ตลับหมึก Brother LC-3619XL BK (สีดำ)', wh: 'วัสดุคอมพิวเตอร์', qty: 5, price: 840.00, total: 4200.00 },
+          { name: 'ตลับหมึก Brother LC-3619XL C (สีฟ้า)', wh: 'วัสดุคอมพิวเตอร์', qty: 3, price: 725.00, total: 2175.00 },
+          { name: 'ตลับหมึก Brother LC-3619XLY (สีเหลือง)', wh: 'วัสดุคอมพิวเตอร์', qty: 5, price: 725.00, total: 3625.00 }
+        ];
+        renderScanRows(items);
+      } else if (index === 2) {
+        btn2.className = 'bill-btn active px-3.5 py-1.5 text-xs font-bold rounded bg-stone-900 text-white shadow-xs transition flex items-center gap-1.5 cursor-pointer';
+        preview2.classList.remove('hidden');
+        if (handwritingBox) handwritingBox.classList.add('hidden');
+        currentBillLabel.innerText = 'กำลังแสดง: ใบส่งของ A00603 (แฟ้มเอกสาร ๑ รายการ)';
+        if (noticeHeader) noticeHeader.innerText = 'รายการวัสดุที่ AI ถอดได้ (พร้อมบันทึกเข้าคลัง ๑ รายการ):';
+
+        // Update Header Meta
+        document.getElementById('masterWarehouseSelect').value = 'วัสดุสำนักงาน';
+        document.getElementById('scanRefNo').innerText = 'A00603';
+        document.getElementById('scanSupplier').innerText = 'องค์การบริหารส่วนจังหวัดตาก (กองช่าง)';
+
+        // 1 Folder item
+        const items = [
+          { name: 'แฟ้มสันกว้าง 3 นิ้ว 112F', wh: 'วัสดุสำนักงาน', qty: 9, price: 95.00, total: 855.00 }
+        ];
+        renderScanRows(items);
+      } else if (index === 3) {
+        btn3.className = 'bill-btn active px-3.5 py-1.5 text-xs font-bold rounded bg-amber-900 text-white shadow-xs transition flex items-center gap-1.5 cursor-pointer';
+        preview3.classList.remove('hidden');
+        if (handwritingBox) {
+          handwritingBox.classList.remove('hidden');
+          const addBtn = document.getElementById('addHandwrittenBtn');
+          if (addBtn) {
+            addBtn.innerHTML = `
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+              + แปลงลายมือนี้เป็นรายการรับเข้า (+๕ ตลับ)
+            `;
+            addBtn.className = 'bg-amber-700 hover:bg-amber-800 text-white font-bold text-xs px-3 py-2 rounded flex items-center gap-1.5 transition flex-shrink-0 cursor-pointer shadow-xs';
+            addBtn.disabled = false;
+          }
+        }
+        currentBillLabel.innerText = 'กำลังแสดง: บิลตากคอมพิวเตอร์ DS-6909100001 (มีลายมือเขียนเพิ่มเติม)';
+        if (noticeHeader) noticeHeader.innerText = 'รายการวัสดุที่ AI ถอดได้ (ตรวจพบ ๑ รายการพิมพ์ + ๑ ข้อความลายมือ):';
+
+        // Update Header Meta
+        document.getElementById('masterWarehouseSelect').value = 'วัสดุคอมพิวเตอร์';
+        document.getElementById('scanRefNo').innerText = 'DS-6909100001';
+        document.getElementById('scanSupplier').innerText = 'หจก. ตากคอมพิวเตอร์';
+
+        // 1 Printed Laser Toner item
+        const items = [
+          { name: 'BROTHER TN-269 Black (ตลับหมึกเลเซอร์)', wh: 'วัสดุคอมพิวเตอร์', qty: 1, price: 2290.00, total: 2290.00 }
+        ];
+        renderScanRows(items);
+      }
+    }
+
+    function renderScanRows(items) {
+      const tbody = document.getElementById('scannedItemsTbody');
+      const thaiNums = ['๑','๒','๓','๔','๕','๖','๗','๘','๙','๑๐','๑๑','๑๒'];
+      tbody.innerHTML = '';
+
+      items.forEach((item, idx) => {
+        const tr = document.createElement('tr');
+        tr.className = item.isHandwritten ? 'hover:bg-blue-50/60 bg-blue-50/20' : 'hover:bg-[#fbf7ee]';
+
+        const badgeHtml = item.isHandwritten 
+          ? `<span class="text-[9.5px] bg-blue-100 text-blue-900 border border-blue-300 px-1.5 py-0.5 rounded font-bold whitespace-nowrap flex-shrink-0 flex items-center gap-1">✍️ ลายมือเขียน</span>`
+          : (item.isManual ? `<span class="text-[9.5px] bg-amber-100 text-amber-900 border border-amber-300 px-1.5 py-0.5 rounded font-bold whitespace-nowrap flex-shrink-0">👤 เพิ่มเอง</span>` : '');
+
+        tr.innerHTML = `
+          <td class="py-2 px-2 text-center font-mono-ledger">${thaiNums[idx] || (idx+1)}</td>
+          <td class="py-2 px-3">
+            <div class="flex items-center gap-1.5">
+              <input type="text" class="scan-item-name w-full ${item.isHandwritten ? 'bg-white border-blue-300' : 'bg-[#fbf9f4]'} hover:bg-white focus:bg-white border border-stone-200 focus:border-stone-500 rounded px-2 py-1 text-xs text-stone-900 font-medium transition" value="${item.name}">
+              ${badgeHtml}
+            </div>
+          </td>
+          <td class="py-2 px-2 text-center">
+            <select class="scan-item-warehouse w-full bg-white border border-stone-300 rounded px-2 py-1 text-xs text-stone-800 font-medium cursor-pointer">
+              <option value="วัสดุคอมพิวเตอร์" ${item.wh === 'วัสดุคอมพิวเตอร์' ? 'selected' : ''}>วัสดุคอมพิวเตอร์</option>
+              <option value="วัสดุสำนักงาน" ${item.wh === 'วัสดุสำนักงาน' ? 'selected' : ''}>วัสดุสำนักงาน</option>
+              <option value="ซองจดหมาย" ${item.wh === 'ซองจดหมาย' ? 'selected' : ''}>ซองจดหมาย</option>
+              <option value="วัสดุรวม" ${item.wh === 'วัสดุรวม' ? 'selected' : ''}>วัสดุรวม</option>
+              <option value="วัสดุงานบ้าน" ${item.wh === 'วัสดุงานบ้าน' ? 'selected' : ''}>วัสดุงานบ้าน</option>
+            </select>
+          </td>
+          <td class="py-2 px-2 text-center">
+            <input type="number" min="1" class="scan-item-qty w-14 mx-auto block text-center font-mono-ledger font-bold text-sm text-emerald-900 bg-emerald-50 border border-emerald-300 focus:border-emerald-600 rounded py-1" value="${item.qty}" oninput="recalculateScanTotals()">
+          </td>
+          <td class="py-2 px-2.5 text-right font-mono-ledger text-stone-600 scan-item-price" data-price="${item.price.toFixed(2)}">
+            <input type="number" step="0.01" class="scan-item-price-input w-20 text-right font-mono-ledger text-xs bg-transparent border-0 focus:bg-white border-b border-transparent focus:border-stone-400 rounded py-0.5 px-1" value="${item.price.toFixed(2)}" oninput="updateRowPrice(this)">
+          </td>
+          <td class="py-2 px-2.5 text-right font-mono-ledger font-semibold text-stone-900 scan-item-total">${item.total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+          <td class="py-2 px-1 text-center">
+            <button type="button" onclick="deleteScanRow(this)" title="ลบรายการนี้" class="text-stone-300 hover:text-red-600 transition font-bold px-1 text-xs">✕</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      recalculateScanTotals();
+    }
+
+    function addHandwrittenItem() {
+      if (handwrittenAdded) return;
+      
+      const tbody = document.getElementById('scannedItemsTbody');
+      const thaiNums = ['๑','๒','๓','๔','๕','๖','๗','๘','๙','๑๐','๑๑','๑๒'];
+      const rowIdx = tbody.children.length;
+      
+      const tr = document.createElement('tr');
+      tr.className = 'hover:bg-blue-50/60 bg-blue-50/25 transition';
+      tr.innerHTML = `
+        <td class="py-2 px-2 text-center font-mono-ledger">${thaiNums[rowIdx] || (rowIdx+1)}</td>
+        <td class="py-2 px-3">
+          <div class="flex items-center gap-1.5">
+            <input type="text" class="scan-item-name w-full bg-white border border-blue-300 focus:border-blue-600 rounded px-2 py-1 text-xs text-stone-900 font-medium transition" value="ตลับหมึก Brother LC-3619 BK (สีดำ) [มาพร้อมบิล]">
+            <span class="text-[9.5px] bg-blue-100 text-blue-900 border border-blue-300 px-1.5 py-0.5 rounded font-bold whitespace-nowrap flex-shrink-0 flex items-center gap-1">✍️ ลายมือเขียน</span>
+          </div>
+        </td>
+        <td class="py-2 px-2 text-center">
+          <select class="scan-item-warehouse w-full bg-white border border-stone-300 rounded px-2 py-1 text-xs text-stone-800 font-medium cursor-pointer">
+            <option value="วัสดุคอมพิวเตอร์" selected>วัสดุคอมพิวเตอร์</option>
+            <option value="วัสดุสำนักงาน">วัสดุสำนักงาน</option>
+            <option value="ซองจดหมาย">ซองจดหมาย</option>
+            <option value="วัสดุรวม">วัสดุรวม</option>
+            <option value="วัสดุงานบ้าน">วัสดุงานบ้าน</option>
+          </select>
+        </td>
+        <td class="py-2 px-2 text-center">
+          <input type="number" min="1" class="scan-item-qty w-14 mx-auto block text-center font-mono-ledger font-bold text-sm text-emerald-900 bg-emerald-50 border border-emerald-300 focus:border-emerald-600 rounded py-1" value="5" oninput="recalculateScanTotals()">
+        </td>
+        <td class="py-2 px-2.5 text-right font-mono-ledger text-stone-600 scan-item-price" data-price="0.00">
+          <input type="number" step="0.01" class="scan-item-price-input w-20 text-right font-mono-ledger text-xs bg-transparent border-0 focus:bg-white border-b border-stone-300 rounded py-0.5 px-1" value="0.00" oninput="updateRowPrice(this)">
+        </td>
+        <td class="py-2 px-2.5 text-right font-mono-ledger font-semibold text-stone-900 scan-item-total">0.00</td>
+        <td class="py-2 px-1 text-center">
+          <button type="button" onclick="deleteScanRow(this)" title="ลบรายการนี้" class="text-stone-300 hover:text-red-600 transition font-bold px-1 text-xs">✕</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+      
+      handwrittenAdded = true;
+      const addBtn = document.getElementById('addHandwrittenBtn');
+      if (addBtn) {
+        addBtn.innerHTML = `
+          <svg class="w-3.5 h-3.5 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+          ✓ แปลงเข้าตารางรับเข้าแล้ว (+๕ ตลับ)
+        `;
+        addBtn.className = 'bg-emerald-700 text-white font-bold text-xs px-3 py-2 rounded flex items-center gap-1.5 transition flex-shrink-0 cursor-default opacity-90 shadow-xs';
+        addBtn.disabled = true;
+      }
+      
+      const noticeHeader = document.getElementById('scanItemsHeaderNotice');
+      if (noticeHeader) noticeHeader.innerText = 'รายการวัสดุที่ AI ถอดได้ (พร้อมบันทึกเข้าคลัง ๒ รายการ):';
+
+      recalculateScanTotals();
+    }
+
+    function addManualRow() {
+      const tbody = document.getElementById('scannedItemsTbody');
+      const thaiNums = ['๑','๒','๓','๔','๕','๖','๗','๘','๙','๑๐','๑๑','๑๒','๑๓','๑๔','๑๕'];
+      const rowIdx = tbody.children.length;
+      const currentWh = document.getElementById('masterWarehouseSelect').value || 'วัสดุสำนักงาน';
+
+      const tr = document.createElement('tr');
+      tr.className = 'hover:bg-[#fbf7ee] bg-amber-50/15 transition';
+      tr.innerHTML = `
+        <td class="py-2 px-2 text-center font-mono-ledger">${thaiNums[rowIdx] || (rowIdx+1)}</td>
+        <td class="py-2 px-3">
+          <div class="flex items-center gap-1.5">
+            <input type="text" class="scan-item-name w-full bg-white border border-amber-300 focus:border-amber-600 rounded px-2 py-1 text-xs text-stone-900 font-medium transition" placeholder="พิมพ์ชื่อรายการวัสดุที่ต้องการรับเข้า...">
+            <span class="text-[9.5px] bg-amber-100 text-amber-900 border border-amber-300 px-1.5 py-0.5 rounded font-bold whitespace-nowrap flex-shrink-0">👤 เพิ่มเอง</span>
+          </div>
+        </td>
+        <td class="py-2 px-2 text-center">
+          <select class="scan-item-warehouse w-full bg-white border border-stone-300 rounded px-2 py-1 text-xs text-stone-800 font-medium cursor-pointer">
+            <option value="วัสดุคอมพิวเตอร์" ${currentWh === 'วัสดุคอมพิวเตอร์' ? 'selected' : ''}>วัสดุคอมพิวเตอร์</option>
+            <option value="วัสดุสำนักงาน" ${currentWh === 'วัสดุสำนักงาน' ? 'selected' : ''}>วัสดุสำนักงาน</option>
+            <option value="ซองจดหมาย" ${currentWh === 'ซองจดหมาย' ? 'selected' : ''}>ซองจดหมาย</option>
+            <option value="วัสดุรวม" ${currentWh === 'วัสดุรวม' ? 'selected' : ''}>วัสดุรวม</option>
+            <option value="วัสดุงานบ้าน" ${currentWh === 'วัสดุงานบ้าน' ? 'selected' : ''}>วัสดุงานบ้าน</option>
+          </select>
+        </td>
+        <td class="py-2 px-2 text-center">
+          <input type="number" min="1" class="scan-item-qty w-14 mx-auto block text-center font-mono-ledger font-bold text-sm text-emerald-900 bg-emerald-50 border border-emerald-300 focus:border-emerald-600 rounded py-1" value="1" oninput="recalculateScanTotals()">
+        </td>
+        <td class="py-2 px-2.5 text-right font-mono-ledger text-stone-600 scan-item-price" data-price="0.00">
+          <input type="number" step="0.01" class="scan-item-price-input w-20 text-right font-mono-ledger text-xs bg-transparent border-0 focus:bg-white border-b border-stone-300 rounded py-0.5 px-1" value="0.00" oninput="updateRowPrice(this)">
+        </td>
+        <td class="py-2 px-2.5 text-right font-mono-ledger font-semibold text-stone-900 scan-item-total">0.00</td>
+        <td class="py-2 px-1 text-center">
+          <button type="button" onclick="deleteScanRow(this)" title="ลบรายการนี้" class="text-stone-300 hover:text-red-600 transition font-bold px-1 text-xs">✕</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+      
+      const newNameInput = tr.querySelector('.scan-item-name');
+      if (newNameInput) newNameInput.focus();
+
+      recalculateScanTotals();
+    }
+
+    function deleteScanRow(btn) {
+      const row = btn.closest('tr');
+      if (!row) return;
+
+      const isHandwritten = row.innerText.includes('ลายมือเขียน');
+      if (isHandwritten) {
+        handwrittenAdded = false;
+        const addBtn = document.getElementById('addHandwrittenBtn');
+        if (addBtn) {
+          addBtn.innerHTML = `
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            + แปลงลายมือนี้เป็นรายการรับเข้า (+๕ ตลับ)
+          `;
+          addBtn.className = 'bg-amber-700 hover:bg-amber-800 text-white font-bold text-xs px-3 py-2 rounded flex items-center gap-1.5 transition flex-shrink-0 cursor-pointer shadow-xs';
+          addBtn.disabled = false;
+        }
+      }
+
+      row.remove();
+
+      // Re-index remaining rows with Thai numbers
+      const thaiNums = ['๑','๒','๓','๔','๕','๖','๗','๘','๙','๑๐','๑๑','๑๒','๑๓','๑๔','๑๕'];
+      const rows = document.querySelectorAll('#scannedItemsTbody tr');
+      rows.forEach((r, idx) => {
+        const indexCell = r.querySelector('td:first-child');
+        if (indexCell) indexCell.innerText = thaiNums[idx] || (idx + 1);
+      });
+
+      const noticeHeader = document.getElementById('scanItemsHeaderNotice');
+      if (noticeHeader) {
+        noticeHeader.innerText = `รายการวัสดุที่ AI ถอดได้ (พร้อมบันทึกเข้าคลัง ${thaiNums[rows.length - 1] || rows.length} รายการ):`;
+      }
+
+      recalculateScanTotals();
+    }
+
+    function updateRowPrice(input) {
+      const row = input.closest('tr');
+      if (!row) return;
+      const price = parseFloat(input.value) || 0;
+      const priceEl = row.querySelector('.scan-item-price');
+      if (priceEl) priceEl.setAttribute('data-price', price.toFixed(2));
+      recalculateScanTotals();
+    }
+
+    function changeAllWarehouses(val) {
+      const selects = document.querySelectorAll('.scan-item-warehouse');
+      selects.forEach(s => s.value = val);
+    }
+
+    function recalculateScanTotals() {
+      const rows = document.querySelectorAll('#scannedItemsTable tbody tr');
+      let totalQty = 0;
+      let totalAmount = 0;
+
+      rows.forEach(r => {
+        const qtyInput = r.querySelector('.scan-item-qty');
+        const priceEl = r.querySelector('.scan-item-price');
+        const totalEl = r.querySelector('.scan-item-total');
+
+        if (qtyInput && priceEl && totalEl) {
+          const qty = parseInt(qtyInput.value) || 0;
+          const price = parseFloat(priceEl.getAttribute('data-price')) || 0;
+          const rowTotal = qty * price;
+          totalQty += qty;
+          totalAmount += rowTotal;
+          totalEl.innerText = rowTotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+      });
+
+      const qtyEl = document.getElementById('scanTotalQty');
+      if (qtyEl) qtyEl.innerText = totalQty;
+
+      const amtEl = document.getElementById('scanTotalAmount');
+      if (amtEl) amtEl.innerText = totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function confirmScanRestock() {
+      const rows = document.querySelectorAll('#scannedItemsTable tbody tr');
+      const ledgerBody = document.getElementById('ledgerBody');
+      const refNo = document.getElementById('scanRefNo').innerText;
+      const supplier = document.getElementById('scanSupplier').innerText;
+      let totalQty = 0;
+      let targetWarehouses = new Set();
+      let countItems = 0;
+
+      const prefixMap = {
+        'วัสดุคอมพิวเตอร์': 'COM',
+        'ซองจดหมาย': 'ENV',
+        'วัสดุรวม': 'GEN',
+        'วัสดุสำนักงาน': 'OFF',
+        'วัสดุงานบ้าน': 'HOU'
+      };
+
+      rows.forEach((r, idx) => {
+        const nameInput = r.querySelector('.scan-item-name');
+        const whSelect = r.querySelector('.scan-item-warehouse');
+        const qtyInput = r.querySelector('.scan-item-qty');
+
+        if (nameInput && whSelect && qtyInput) {
+          const name = nameInput.value.trim();
+          const warehouse = whSelect.value;
+          const qty = parseInt(qtyInput.value) || 0;
+          if (qty <= 0) return;
+
+          totalQty += qty;
+          countItems++;
+          targetWarehouses.add(warehouse);
+
+          const pfx = prefixMap[warehouse] || 'MAT';
+          const sku = `${pfx}-RCV-${String(idx + 1).padStart(2, '0')}`;
+
+          const tr = document.createElement('tr');
+          tr.className = 'hover:bg-[#fbf7ee]/90 transition bg-emerald-50/20';
+          tr.setAttribute('data-cat', warehouse);
+          tr.innerHTML = `
+            <td class="py-3 px-3 text-center font-mono-ledger font-bold text-stone-900">${sku}</td>
+            <td class="py-3 px-4">
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-stone-900 text-sm">${name}</span>
+                <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded border border-emerald-300">เพิ่งรับเข้า +${qty}</span>
+              </div>
+              <div class="text-[11px] text-stone-500 italic">นำเข้าจากบิลเลขที่ ${refNo} (${supplier})</div>
+            </td>
+            <td class="py-3 px-3 text-center font-semibold text-stone-800 bg-[#faf6ee]">${warehouse}</td>
+            <td class="py-3 px-3 text-center font-mono-ledger text-stone-500">2</td>
+            <td class="py-3 px-3 text-center font-mono-ledger font-bold text-emerald-800 bg-emerald-50 text-sm">
+              ${qty}
+            </td>
+            <td class="py-3 px-3 text-center">
+              <span class="stamp-green">มีพร้อมจ่าย</span>
+            </td>
+            <td class="py-3 px-3 text-center">
+              <button onclick="quickIssueToForm('${sku}', '${name}', ${qty})" class="text-stone-800 hover:text-blue-800 underline font-semibold">ขอเบิก</button>
+            </td>
+          `;
+          ledgerBody.appendChild(tr);
+        }
+      });
+
+      const whList = Array.from(targetWarehouses).join(', ');
+      const primaryWh = Array.from(targetWarehouses)[0] || 'วัสดุสำนักงาน';
+
+      alert(`✓ บันทึกการตรวจรับวัสดุ ${countItems} รายการ (รวม ${totalQty} ชิ้น) เรียบร้อยแล้ว!\n\n• บันทึกเข้าคลัง: ${whList}\n• อ้างอิงบิล: ${refNo} (${supplier})\n• ระบบนำท่านไปยังหน้าบัตรควบคุมวัสดุทันที`);
+      switchTab('stockcard');
+      document.getElementById('catSelect').value = primaryWh;
+      filterTable();
+    }
+
+    function filterTable() {
+      const q = document.getElementById('searchInput').value.toLowerCase();
+      const cat = document.getElementById('catSelect').value;
+      const rows = document.querySelectorAll('#ledgerBody tr');
+      let visibleCount = 0;
+
+      rows.forEach(r => {
+        const text = r.innerText.toLowerCase();
+        const rowCat = r.getAttribute('data-cat');
+        const matchSearch = text.includes(q);
+        const matchCat = (cat === 'all') || (rowCat === cat);
+
+        if (matchSearch && matchCat) {
+          r.style.display = '';
+          visibleCount++;
+        } else {
+          r.style.display = 'none';
+        }
+      });
+
+      const countEl = document.getElementById('ledgerCountNotice');
+      if (countEl) {
+        countEl.innerText = `หน้า ๑ จาก ๑ (แสดงทั้งหมด ${visibleCount} รายการ)`;
+      }
+    }
+
+    function quickIssueToForm(sku, name, stock) {
+      switchTab('issueform');
+    }
+
+    function addPaperRow() {
+      const tbody = document.getElementById('paperReqBody');
+      const count = tbody.children.length + 1;
+      const thaiNum = ['๐','๑','๒','๓','๔','๕','๖','๗','๘','๙'][count] || count;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="py-2.5 px-2 text-center font-mono-ledger">${thaiNum}</td>
+        <td class="py-2.5 px-3 font-mono-ledger font-bold text-stone-800">CLN-GLV-03</td>
+        <td class="py-2.5 px-4 font-medium text-stone-900">ถุงมือยางอนามัย ไซส์ M (กล่อง 100 ชิ้น)</td>
+        <td class="py-2.5 px-3 text-center font-mono-ledger text-stone-600">2</td>
+        <td class="py-2.5 px-3 text-center bg-[#faf6ee]">
+          <input type="number" value="1" min="1" max="2" class="w-16 text-center font-mono-ledger font-bold text-sm bg-white border border-stone-300 py-1 rounded">
+        </td>
+        <td class="py-2.5 px-2 text-center"><button onclick="this.closest('tr').remove()" class="text-stone-400 hover:text-red-600">✕</button></td>
+      `;
+      tbody.appendChild(tr);
+    }
+
+    function saveAndFulfill() {
+      const date = document.getElementById('paperDate').value;
+      const deptSelect = document.getElementById('paperDeptSelect');
+      const deptCode = deptSelect ? deptSelect.value : 'CON';
+      const deptName = deptSelect ? deptSelect.options[deptSelect.selectedIndex].text.replace(/\[.*?\]\s*/, '') : 'ฝ่ายก่อสร้างและซ่อมบำรุง';
+      const requester = document.getElementById('paperRequesterName').value;
+      const approver = document.getElementById('paperApproverName').value;
+      const fulfilledBy = document.getElementById('paperFulfilledBy').value;
+      const purpose = document.getElementById('paperPurpose').value;
+
+      const rows = document.querySelectorAll('#paperReqBody tr');
+      if (rows.length === 0) {
+        alert('กรุณาเพิ่มรายการวัสดุที่ขอเบิกอย่างน้อย ๑ รายการ');
+        return;
+      }
+
+      const items = [];
+      let totalQty = 0;
+      const slipTbody = document.getElementById('slipItemsBody');
+      if (slipTbody) slipTbody.innerHTML = '';
+
+      rows.forEach((r, idx) => {
+        const sku = r.children[1] ? r.children[1].innerText.trim() : 'MAT-01';
+        const name = r.children[2] ? r.children[2].innerText.trim() : 'วัสดุ';
+        const qtyInput = r.querySelector('input');
+        const qty = qtyInput ? (parseInt(qtyInput.value) || 1) : 1;
+        totalQty += qty;
+        items.push({ sku, name, requestedQty: qty });
+
+        if (slipTbody) {
+          const thaiNum = ['๐','๑','๒','๓','๔','๕','๖','๗','๘','๙'][idx + 1] || (idx + 1);
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="border border-stone-300 py-2 px-2 text-center font-mono-ledger">${thaiNum}</td>
+            <td class="border border-stone-300 py-2 px-3 text-center font-mono-ledger font-semibold">${sku}</td>
+            <td class="border border-stone-300 py-2 px-4">${name}</td>
+            <td class="border border-stone-300 py-2 px-3 text-center font-mono-ledger">${qty}</td>
+            <td class="border border-stone-300 py-2 px-3 text-center font-mono-ledger font-bold text-stone-900">${qty}</td>
+          `;
+          slipTbody.appendChild(tr);
+        }
+      });
+
+      const now = new Date();
+      const thaiYear = (now.getFullYear() + 543).toString().slice(-2);
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const reqNo = `REQ-${thaiYear}-${month}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+      // Update Slip Elements
+      const elRefNo = document.getElementById('slipRefNo'); if (elRefNo) elRefNo.innerText = reqNo;
+      const elDate = document.getElementById('slipDate'); if (elDate) elDate.innerText = date;
+      const elDept = document.getElementById('slipDept'); if (elDept) elDept.innerText = `${deptName} (${deptCode})`;
+      const elReq = document.getElementById('slipRequester'); if (elReq) elReq.innerText = requester;
+      const elPurp = document.getElementById('slipPurpose'); if (elPurp) elPurp.innerText = purpose;
+      const elFul = document.getElementById('slipFulfilledBy'); if (elFul) elFul.innerText = fulfilledBy;
+      const elQty = document.getElementById('slipTotalQty'); if (elQty) elQty.innerText = totalQty;
+      const sigReq = document.getElementById('sigRequester'); if (sigReq) sigReq.innerText = `(${requester})`;
+      const sigApp = document.getElementById('sigApprover'); if (sigApp) sigApp.innerText = `(${approver || 'หัวหน้าฝ่าย / ผู้สั่งจ่าย'})`;
+      const sigFul = document.getElementById('sigFulfilled'); if (sigFul) sigFul.innerText = `(${fulfilledBy || 'เจ้าหน้าที่คลังพัสดุ'})`;
+
+      // Google Apps Script Call
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            console.log('✓ บันทึกลง Google Sheets สำเร็จ:', res);
+          })
+          .withFailureHandler(function(err) {
+            console.error('GAS Error:', err);
+          })
+          .fulfillRequisition({
+            reqNo: reqNo,
+            date: date,
+            departmentCode: deptCode,
+            departmentName: deptName,
+            requesterName: requester,
+            approverName: approver,
+            fulfilledBy: fulfilledBy,
+            purpose: purpose,
+            items: items
+          });
+      }
+
+      alert('✓ บันทึกการจ่ายของและตัดสต็อกเรียบร้อยแล้ว!\nระบบได้นำท่านไปยังหน้าใบรับ-จ่ายวัสดุฉบับจริง');
+      switchTab('slipview');
+    }
+
+    // Load Live Google Sheets Data on Start
+    function loadGASData() {
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            if (res && res.items && res.items.length > 0) {
+              const tbody = document.getElementById('ledgerBody');
+              if (tbody) {
+                tbody.innerHTML = '';
+                res.items.forEach(item => {
+                  const tr = document.createElement('tr');
+                  tr.className = 'hover:bg-[#fbf7ee]/90 transition';
+                  tr.setAttribute('data-cat', item.category);
+                  const isLow = item.currentStock <= item.minStock;
+                  const isOut = item.currentStock <= 0;
+                  let stamp = '<span class="stamp-green">มีพร้อมจ่าย</span>';
+                  if (isOut) stamp = '<span class="stamp-red">หมดคลัง</span>';
+                  else if (isLow) stamp = '<span class="stamp-red">ใกล้หมดคลัง</span>';
+
+                  tr.innerHTML = `
+                    <td class="py-3 px-3 text-center font-mono-ledger font-bold text-stone-900">${item.sku}</td>
+                    <td class="py-3 px-4">
+                      <div class="font-bold text-stone-900 text-sm">${item.name}</div>
+                      <div class="text-[11px] text-stone-500 italic">ราคา ฿${item.unitPrice.toLocaleString()} / ${item.unit || 'ชิ้น'}</div>
+                    </td>
+                    <td class="py-3 px-3 text-center font-semibold text-stone-800 bg-[#faf6ee]">${item.category}</td>
+                    <td class="py-3 px-3 text-center font-mono-ledger text-stone-500">${item.minStock}</td>
+                    <td class="py-3 px-3 text-center font-mono-ledger font-bold ${isOut ? 'text-red-700 bg-red-50' : isLow ? 'text-amber-700 bg-amber-50' : 'text-stone-900 bg-stone-50'} text-sm">
+                      ${item.currentStock}
+                    </td>
+                    <td class="py-3 px-3 text-center">${stamp}</td>
+                    <td class="py-3 px-3 text-center">
+                      <button onclick="quickIssueToForm('${item.sku}', '${item.name}', ${item.currentStock})" class="text-stone-800 hover:text-blue-800 underline font-semibold">ขอเบิก</button>
+                    </td>
+                  `;
+                  tbody.appendChild(tr);
+                });
+                filterTable();
+              }
+            }
+          })
+          .getItems();
+      }
+    }
+
+    // Keyboard shortcut /
+    document.addEventListener('keydown', (e) => {
+      if (e.key === '/' && document.activeElement.tagName !== 'INPUT') {
+        e.preventDefault();
+        document.getElementById('searchInput').focus();
+      }
+    });
+
+    // Initialize scan table with sample 1 and load live data
+    loadBillSample(1);
+    loadGASData();
+  </script>
+</body>
+</html>
