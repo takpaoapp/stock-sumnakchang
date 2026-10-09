@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>จำลองระบบจัดการผู้ใช้งาน (Admin User Management Prototype) - สำนักการช่าง</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Krub:wght@400;500;600;700&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body { 
+      font-family: 'Sarabun', sans-serif; 
+      background-color: #f3efe6;
+      background-image: radial-gradient(#e4dcce 0.8px, transparent 0.8px);
+      background-size: 16px 16px;
+    }
+    .font-mono-ledger { font-family: 'Courier Prime', monospace; }
+    .font-heading { font-family: 'Krub', sans-serif; }
+
+    /* Paper Effect & Subtle Shadows */
+    .paper-sheet {
+      background: #fdfcf9;
+      border: 1px solid #e2dac9;
+      box-shadow: 
+        0 1px 2px rgba(60, 50, 30, 0.05),
+        0 4px 12px rgba(60, 50, 30, 0.06),
+        0 12px 28px rgba(60, 50, 30, 0.04);
+      position: relative;
+    }
+
+    .paper-sheet::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        rgba(235, 227, 213, 0.15),
+        rgba(235, 227, 213, 0.15) 1px,
+        transparent 1px,
+        transparent 28px
+      );
+      pointer-events: none;
+      border-radius: inherit;
+    }
+
+    /* Manila Folder Tab Effect */
+    .folder-tab {
+      background: #e9e1cf;
+      border: 1px solid #d4c7b0;
+      border-bottom: none;
+      border-radius: 8px 8px 0 0;
+      transition: all 0.15s ease-in-out;
+    }
+    .folder-tab.active {
+      background: #fdfcf9;
+      border-color: #d4c7b0;
+      box-shadow: 0 -2px 6px rgba(50, 40, 20, 0.05);
+      position: relative;
+      z-index: 10;
+    }
+
+    /* Toast Animation */
+    @keyframes slideIn {
+      from { transform: translateY(-20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .toast-anim {
+      animation: slideIn 0.25s ease-out forwards;
+    }
+  </style>
+</head>
+<body class="min-h-screen text-stone-800 pb-12">
+
+  <!-- ================= 🌟 TOP PREVIEW CONTROL BAR ================= -->
+  <div class="sticky top-0 z-50 bg-stone-900 text-stone-100 px-4 py-2.5 shadow-md border-b-2 border-amber-600 flex flex-wrap items-center justify-between gap-3 text-xs">
+    <div class="flex items-center gap-2.5">
+      <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-amber-500 text-stone-950 font-bold text-xs">⚡</span>
+      <div>
+        <div class="font-bold font-heading text-amber-300">หน้าจอจำลองต้นแบบ (Live Prototype): ระบบ Admin จัดการและเพิ่มผู้ใช้งาน</div>
+        <div class="text-[11px] text-stone-300">ทดลองใช้งานได้สมบูรณ์ 100% (เพิ่มผู้ใช้, Auto USR-xxx, แก้ไข, รีเซ็ต PIN, สลับสถานะ, ลบ)</div>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <button onclick="resetMockData()" class="bg-stone-800 hover:bg-stone-700 text-stone-200 border border-stone-600 px-3 py-1 rounded text-xs transition cursor-pointer flex items-center gap-1">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+        คืนค่าข้อมูลเริ่มต้น
+      </button>
+      <span class="bg-purple-900/80 text-purple-200 px-2.5 py-1 rounded border border-purple-700 font-mono text-[11px]">
+        สถานะล็อกอิน: admin (ADMIN)
+      </span>
+    </div>
+  </div>
+
+  <div class="max-w-6xl mx-auto px-4 pt-6">
+
+    <!-- ================= 🏛️ HEADER ================= -->
+    <header class="mb-5 flex flex-wrap items-center justify-between gap-4 border-b-2 border-stone-800 pb-4">
+      <div class="flex items-center gap-3.5">
+        <div class="w-12 h-12 rounded-xl bg-amber-800 text-amber-100 flex items-center justify-center font-bold text-2xl shadow-md border-2 border-amber-900">
+          🏛️
+        </div>
+        <div>
+          <div class="text-[11px] font-mono-ledger text-amber-800 font-bold tracking-wider">OFFICE OF PUBLIC WORKS • MUNICIPALITY</div>
+          <h1 class="text-xl md:text-2xl font-heading font-bold text-stone-900 leading-tight">ระบบบัตรควบคุมและเบิกจ่ายวัสดุ</h1>
+          <p class="text-xs text-stone-600 font-medium">สำนักช่าง เทศบาลตำบลตากฟ้า (Paper & Ledger Style)</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 bg-[#eae2d0] border border-stone-300 rounded-lg px-3 py-2 shadow-xs">
+        <div class="w-8 h-8 rounded-full bg-purple-900 text-white flex items-center justify-center font-bold text-xs shadow-inner">
+          👑
+        </div>
+        <div class="text-left text-xs">
+          <div class="font-bold text-stone-900 leading-tight">ผู้ดูแลระบบพัสดุ สำนักช่าง</div>
+          <div class="text-[11px] text-purple-900 font-semibold">@admin • ฝ่ายบริหารงานทั่วไป (ADMIN)</div>
+        </div>
+      </div>
+    </header>
+
+    <!-- ================= 📂 MANILA TABS ================= -->
+    <div class="flex items-end gap-1 border-b-2 border-[#d4c7b0] px-2 text-xs font-heading font-bold overflow-x-auto">
+      <button class="folder-tab px-4 py-2.5 text-stone-500 hover:text-stone-800 opacity-70 cursor-not-allowed">
+        📄 [๑] จ่ายพัสดุ
+      </button>
+      <button class="folder-tab px-4 py-2.5 text-stone-500 hover:text-stone-800 opacity-70 cursor-not-allowed">
+        📥 [๒] รับเข้าพัสดุ & AI OCR
+      </button>
+      <button class="folder-tab px-4 py-2.5 text-stone-500 hover:text-stone-800 opacity-70 cursor-not-allowed">
+        📋 [๓] บัตรควบคุมพัสดุ
+      </button>
+      <button class="folder-tab px-4 py-2.5 text-stone-500 hover:text-stone-800 opacity-70 cursor-not-allowed">
+        📑 [๔] ประวัติการเบิกของฉัน
+      </button>
+      <button class="folder-tab active px-5 py-2.5 text-purple-950 font-bold border-t-2 border-t-purple-800 bg-[#fdfcf9] flex items-center gap-1.5 shadow-xs">
+        <span>🗂️ [๕] จัดการผู้มีสิทธิ์ & แอดมิน (Admin)</span>
+        <span class="bg-purple-100 text-purple-800 text-[10px] px-1.5 py-0.2 rounded-full border border-purple-300 font-mono" id="tabBadgeCount">2</span>
+      </button>
+    </div>
+
+    <!-- ================= 📄 TAB 5 CONTENT: USER MANAGEMENT ================= -->
+    <main class="paper-sheet rounded-b-xl rounded-tr-xl p-5 md:p-7 space-y-6">
+
+      <!-- Section Title & Top Actions -->
+      <div class="flex flex-wrap items-center justify-between border-b-2 border-stone-800 pb-4 gap-3">
+        <div>
+          <span class="text-[11px] font-mono-ledger text-purple-800 font-bold uppercase tracking-widest">AUTHORIZED OFFICERS & ACCESS CONTROL</span>
+          <h2 class="text-xl font-heading font-bold text-stone-900">ทะเบียนผู้มีสิทธิ์จัดการเบิกพัสดุและผู้ดูแลระบบ</h2>
+          <p class="text-xs text-stone-600 mt-0.5">บริหารจัดการบัญชีผู้ใช้งาน สิทธิ์การเข้าถึง และรหัสผ่านของเจ้าหน้าที่ประจำสำนักช่าง</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="openUserModal()" class="bg-purple-900 hover:bg-purple-950 text-white font-heading font-bold text-xs px-4 py-2.5 rounded-lg flex items-center gap-2 shadow-md transition cursor-pointer active:scale-95">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+            + เพิ่มเจ้าหน้าที่ผู้มีสิทธิ์ใหม่
+          </button>
+        </div>
+      </div>
+
+      <!-- Overview Statistics Badges -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+        <div class="bg-[#f7f2e4] border border-stone-300 rounded-lg p-3">
+          <div class="text-stone-500 font-medium">เจ้าหน้าที่ทั้งหมด</div>
+          <div class="text-xl font-heading font-bold text-stone-900" id="statTotalUsers">2 คน</div>
+        </div>
+        <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+          <div class="text-emerald-700 font-medium">เปิดใช้งานปกติ (Active)</div>
+          <div class="text-xl font-heading font-bold text-emerald-800" id="statActiveUsers">2 คน</div>
+        </div>
+        <div class="bg-purple-50 border border-purple-200 rounded-lg p-3">
+          <div class="text-purple-700 font-medium">ผู้ดูแลระบบ (Admin)</div>
+          <div class="text-xl font-heading font-bold text-purple-900" id="statAdminUsers">1 คน</div>
+        </div>
+        <div class="bg-amber-50 border border-amber-200 rounded-lg p-3">
+          <div class="text-amber-800 font-medium">เจ้าหน้าที่เบิก (Officer)</div>
+          <div class="text-xl font-heading font-bold text-amber-900" id="statOfficerUsers">1 คน</div>
+        </div>
+      </div>
+
+      <!-- Safety Notice -->
+      <div class="bg-purple-50/80 border border-purple-200 rounded-lg p-3.5 text-xs text-purple-950 flex items-start gap-2.5">
+        <svg class="w-5 h-5 text-purple-700 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <div class="leading-relaxed">
+          <strong>กฎความปลอดภัยและข้อกำหนดระบบ:</strong>
+          รหัสผู้ใช้งานจะถูกรันเลขอัตโนมัติเป็น <code class="bg-purple-200/60 px-1 py-0.5 rounded font-mono font-bold text-purple-900">USR-xxx</code> เสมอ • รหัส PIN เริ่มต้นสำหรับผู้ใช้ใหม่คือ <code class="bg-purple-200/60 px-1 py-0.5 rounded font-mono font-bold text-purple-900">1234</code> • ระบบมีระบบป้องกัน <strong class="text-red-700">ห้ามลบหรือระงับสิทธิ์บัญชีตนเองที่กำลังล็อกอิน</strong> และ <strong class="text-red-700">ห้ามลบผู้ดูแลระบบคนสุดท้าย</strong> เพื่อป้องกันไม่ให้ระบบล็อกตัวเอง
+        </div>
+      </div>
+
+      <!-- Search & Filter Controls -->
+      <div class="bg-[#f9f6ee] border border-stone-300 rounded-lg p-3 flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div class="flex-1 min-w-[240px] relative">
+          <input 
+            type="text" 
+            id="searchInput" 
+            oninput="handleSearch()"
+            placeholder="🔍 ค้นหาด้วยชื่อ, username, รหัส หรือฝ่าย..." 
+            class="w-full bg-white border border-stone-300 rounded-md pl-9 pr-3 py-2 text-xs focus:outline-none focus:border-stone-800"
+          >
+          <svg class="w-4 h-4 text-stone-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <!-- Department Indicator (Locked to General Administration) -->
+          <div class="bg-[#eee8dc] border border-stone-300 rounded-md px-3 py-2 text-xs text-stone-800 font-semibold flex items-center gap-1.5 shadow-2xs">
+            <span class="text-amber-800">🏢</span>
+            <span>สังกัด: <strong class="text-purple-950">ฝ่ายบริหารงานทั่วไป</strong> <span class="text-[10px] bg-amber-100 text-amber-900 border border-amber-300 px-1 py-0.2 rounded font-bold ml-0.5">🔒 ล็อคเฉพาะฝ่าย</span></span>
+          </div>
+
+          <!-- Filter Role -->
+          <select id="filterRole" onchange="handleSearch()" class="bg-white border border-stone-300 rounded-md px-2.5 py-2 text-xs focus:outline-none focus:border-stone-800">
+            <option value="">-- ทุกบทบาท --</option>
+            <option value="ADMIN">👑 ผู้ดูแลระบบ (ADMIN)</option>
+            <option value="OFFICER">🛠️ เจ้าหน้าที่เบิก (OFFICER)</option>
+          </select>
+
+          <!-- Filter Status -->
+          <select id="filterStatus" onchange="handleSearch()" class="bg-white border border-stone-300 rounded-md px-2.5 py-2 text-xs focus:outline-none focus:border-stone-800">
+            <option value="">-- ทุกสถานะ --</option>
+            <option value="ACTIVE">✅ ใช้งานปกติ</option>
+            <option value="INACTIVE">⛔ ระงับสิทธิ์</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Users Table -->
+      <div class="overflow-x-auto border-2 border-stone-300 rounded-lg shadow-inner bg-[#fdfbf7]">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr class="bg-[#efe8da] border-b-2 border-stone-300 text-stone-800 font-heading font-bold whitespace-nowrap">
+              <th class="py-3 px-3 text-center w-24 whitespace-nowrap">รหัส (ID)</th>
+              <th class="py-3 px-4 w-28 whitespace-nowrap">Username</th>
+              <th class="py-3 px-4 min-w-[170px]">ชื่อ-นามสกุล / เบอร์โทร</th>
+              <th class="py-3 px-4 min-w-[150px]">ตำแหน่ง</th>
+              <th class="py-3 px-4 text-center min-w-[160px] whitespace-nowrap">สังกัดฝ่าย</th>
+              <th class="py-3 px-3 text-center w-32 whitespace-nowrap">บทบาท (Role)</th>
+              <th class="py-3 px-3 text-center w-28 whitespace-nowrap">สถานะ</th>
+              <th class="py-3 px-3 text-center w-48 whitespace-nowrap">เครื่องมือจัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody" class="divide-y divide-stone-200 font-medium">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Table Footer / Helper Info -->
+      <div class="flex flex-wrap items-center justify-between text-xs text-stone-500 pt-1">
+        <div>
+          แสดง <span id="showingCount" class="font-bold text-stone-800">2</span> จากทั้งหมด <span id="totalCount" class="font-bold text-stone-800">2</span> คน
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> ใช้งานปกติ = เข้าสู่ระบบได้</span>
+          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-red-500"></span> ระงับสิทธิ์ = บัญชีถูกล็อค</span>
+        </div>
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- ================= 👤 MODAL: ADD / EDIT USER ================= -->
+  <div id="userFormModal" class="hidden fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+    <div class="max-w-lg w-full paper-sheet rounded-xl p-6 border-2 border-stone-300 shadow-2xl relative my-auto">
+      
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between border-b-2 border-stone-800 pb-3 mb-4">
+        <div class="flex items-center gap-2">
+          <span class="w-7 h-7 rounded bg-purple-900 text-white flex items-center justify-center font-bold text-xs">👤</span>
+          <div>
+            <h3 id="userModalTitle" class="font-heading font-bold text-stone-900 text-base leading-tight">เพิ่มเจ้าหน้าที่ผู้มีสิทธิ์ใหม่</h3>
+            <p class="text-[11px] text-stone-500 font-mono-ledger">USER ID AUTO-GENERATION & CREDENTIAL CONFIG</p>
+          </div>
+        </div>
+        <button onclick="closeUserModal()" class="text-stone-400 hover:text-stone-700 text-2xl font-bold cursor-pointer p-1">&times;</button>
+      </div>
+
+      <!-- Modal Form -->
+      <form id="userForm" onsubmit="handleUserFormSubmit(event)" class="space-y-3.5 text-xs">
+        
+        <!-- Field 1: User ID (Read-only Auto-generated) -->
+        <div class="bg-[#f5eedf]/60 p-3 rounded-lg border border-[#e2d5bd]">
+          <div class="flex items-center justify-between mb-1">
+            <label class="block font-bold text-stone-800">
+              รหัสผู้ใช้งาน (User ID):
+            </label>
+            <span class="inline-flex items-center gap-1 bg-purple-100 text-purple-900 border border-purple-300 px-2 py-0.5 rounded text-[10px] font-bold">
+              ⚡ ระบบสร้างให้อัตโนมัติ (USR-xxx)
+            </span>
+          </div>
+          <input 
+            type="text" 
+            id="formUserId" 
+            readonly 
+            class="w-full bg-stone-200/70 border border-stone-300 rounded px-3 py-2 text-xs font-mono-ledger font-bold text-purple-950 cursor-not-allowed select-all"
+            value="USR-003"
+          >
+          <p class="text-[10px] text-stone-500 mt-1">
+            * รหัสจะรันตามลำดับสูงสุดในฐานข้อมูลอัตโนมัติ ไม่สามารถแก้ไขได้เพื่อป้องกันความผิดพลาดและรหัสชนกัน
+          </p>
+        </div>
+
+        <!-- Field 2: Username & PIN -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-stone-700 mb-1">
+              Username (ชื่อผู้ใช้เข้าสู่ระบบ): <span class="text-red-500">*</span>
+            </label>
+            <input 
+              type="text" 
+              id="formUsername" 
+              required 
+              autocomplete="off"
+              class="w-full bg-[#f8f5ee] border border-stone-300 rounded px-3 py-2 text-xs font-mono-ledger focus:outline-none focus:border-stone-800 focus:bg-white" 
+              placeholder="เช่น somchai, officer2"
+            >
+            <p class="text-[10px] text-stone-500 mt-0.5">ใช้ภาษาอังกฤษ/ตัวเลข ไม่มีเว้นวรรค</p>
+          </div>
+          <div>
+            <label class="block font-bold text-stone-700 mb-1">
+              รหัส PIN เข้าใช้งาน: <span class="text-red-500">*</span>
+            </label>
+            <input 
+              type="text" 
+              id="formPin" 
+              class="w-full bg-[#f8f5ee] border border-stone-300 rounded px-3 py-2 text-xs font-mono-ledger focus:outline-none focus:border-stone-800 focus:bg-white" 
+              placeholder="1234"
+            >
+            <p class="text-[10px] text-stone-500 mt-0.5" id="pinHelperText">
+              * ค่าเริ่มต้นคือ <strong class="text-purple-900">1234</strong> (เปลี่ยนได้)
+            </p>
+          </div>
+        </div>
+
+        <!-- Field 3: Full Name -->
+        <div>
+          <label class="block font-bold text-stone-700 mb-1">
+            ชื่อ-นามสกุล (พร้อมคำนำหน้า): <span class="text-red-500">*</span>
+          </label>
+          <input 
+            type="text" 
+            id="formFullName" 
+            required 
+            class="w-full bg-[#f8f5ee] border border-stone-300 rounded px-3 py-2 text-xs focus:outline-none focus:border-stone-800 focus:bg-white" 
+            placeholder="เช่น นายช่างสมหมาย มุ่งมั่น"
+          >
+        </div>
+
+        <!-- Field 4: Position & Phone -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-stone-700 mb-1">
+              ตำแหน่งงาน: <span class="text-red-500">*</span>
+            </label>
+            <input 
+              type="text" 
+              id="formPosition" 
+              required 
+              class="w-full bg-[#f8f5ee] border border-stone-300 rounded px-3 py-2 text-xs focus:outline-none focus:border-stone-800 focus:bg-white" 
+              placeholder="เช่น นายช่างโยธาชำนาญงาน"
+            >
+          </div>
+          <div>
+            <label class="block font-bold text-stone-700 mb-1">
+              เบอร์โทรศัพท์ / เบอร์ภายใน:
+            </label>
+            <input 
+              type="text" 
+              id="formPhone" 
+              class="w-full bg-[#f8f5ee] border border-stone-300 rounded px-3 py-2 text-xs font-mono-ledger focus:outline-none focus:border-stone-800 focus:bg-white" 
+              placeholder="เช่น 081-xxx-xxxx หรือ ต่อ 12"
+            >
+          </div>
+        </div>
+
+        <!-- Field 5: Department (Locked to General Administration) -->
+        <div class="bg-amber-50/70 p-3 rounded-lg border border-amber-200">
+          <div class="flex items-center justify-between mb-1">
+            <label class="block font-bold text-stone-800">
+              สังกัดฝ่าย: <span class="text-red-500">*</span>
+            </label>
+            <span class="inline-flex items-center gap-1 bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded text-[10px] font-bold">
+              🔒 ล็อคเฉพาะฝ่ายบริหารงานทั่วไป
+            </span>
+          </div>
+          <input 
+            type="text" 
+            id="formDepartment" 
+            readonly 
+            value="ฝ่ายบริหารงานทั่วไป" 
+            class="w-full bg-stone-200/80 border border-stone-300 rounded px-3 py-2 text-xs font-semibold text-stone-900 cursor-not-allowed select-none"
+          >
+          <p class="text-[10px] text-stone-600 mt-1 leading-relaxed">
+            * ตามระเบียบ: ผู้มีสิทธิ์จัดการเบิกพัสดุและผู้ดูแลระบบ ต้องสังกัด <strong>ฝ่ายบริหารงานทั่วไป (งานพัสดุและคลังกลาง)</strong> เท่านั้น
+          </p>
+        </div>
+
+        <!-- Field 6: Role & Status -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-stone-700 mb-1">
+              บทบาท (Role / สิทธิ์): <span class="text-red-500">*</span>
+            </label>
+            <select 
+              id="formRole" 
+              required 
+              class="w-full bg-[#f8f5ee] border border-stone-300 rounded px-2.5 py-2 text-xs focus:outline-none focus:border-stone-800 focus:bg-white font-bold text-purple-900"
+            >
+              <option value="OFFICER">🛠️ เจ้าหน้าที่เบิกพัสดุ (OFFICER)</option>
+              <option value="ADMIN">👑 ผู้ดูแลระบบ (ADMIN)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-stone-700 mb-1">
+              สถานะการใช้งาน: <span class="text-red-500">*</span>
+            </label>
+            <select 
+              id="formStatus" 
+              required 
+              class="w-full bg-[#f8f5ee] border border-stone-300 rounded px-2.5 py-2 text-xs focus:outline-none focus:border-stone-800 focus:bg-white font-semibold"
+            >
+              <option value="ACTIVE">✅ ใช้งานปกติ (ACTIVE)</option>
+              <option value="INACTIVE">⛔ ระงับสิทธิ์ชั่วคราว (INACTIVE)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Error Alert Container -->
+        <div id="userFormErrorMsg" class="hidden text-xs text-red-700 bg-red-50 p-2.5 rounded border border-red-300 font-medium flex items-center gap-2">
+          <span>⚠️</span>
+          <span id="userFormErrorText"></span>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-stone-200">
+          <button 
+            type="button" 
+            onclick="closeUserModal()" 
+            class="px-4 py-2 rounded-lg border border-stone-300 text-stone-700 font-medium hover:bg-stone-100 transition cursor-pointer"
+          >
+            ยกเลิก
+          </button>
+          <button 
+            type="submit" 
+            class="px-5 py-2 rounded-lg bg-purple-900 hover:bg-purple-950 text-white font-heading font-bold shadow-sm transition cursor-pointer flex items-center gap-1.5 active:scale-95"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            บันทึกข้อมูลผู้ใช้
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= ⚠️ MODAL: CONFIRM DELETE ================= -->
+  <div id="deleteConfirmModal" class="hidden fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="max-w-md w-full paper-sheet rounded-xl p-5 border-2 border-red-300 shadow-2xl relative">
+      <div class="flex items-start gap-3">
+        <div class="w-10 h-10 rounded-full bg-red-100 text-red-700 flex items-center justify-center font-bold text-lg flex-shrink-0">
+          🗑️
+        </div>
+        <div class="space-y-1">
+          <h4 class="font-heading font-bold text-stone-900 text-sm">ยืนยันการลบบัญชีผู้ใช้งาน</h4>
+          <p class="text-xs text-stone-600" id="deleteConfirmText">
+            ต้องการลบบัญชีผู้ใช้งานนี้ออกจากระบบใช่หรือไม่?
+          </p>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 mt-4 pt-3 border-t border-stone-200 text-xs">
+        <button onclick="closeDeleteModal()" class="px-3.5 py-1.5 rounded border border-stone-300 text-stone-600 hover:bg-stone-100 font-medium">ยกเลิก</button>
+        <button id="confirmDeleteBtn" class="px-4 py-1.5 rounded bg-red-700 hover:bg-red-800 text-white font-bold shadow-sm">ยืนยันการลบ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 🔔 FLOATING TOAST NOTIFICATION ================= -->
+  <div id="toastNotification" class="hidden fixed bottom-6 right-6 z-50 max-w-sm bg-stone-900 text-white px-4 py-3 rounded-xl shadow-2xl border border-stone-700 text-xs flex items-center gap-3 toast-anim">
+    <span id="toastIcon" class="text-lg">✅</span>
+    <span id="toastMsg" class="font-medium"></span>
+  </div>
+
+  <!-- ================= 💻 SCRIPT: INTERACTIVE ENGINE ================= -->
+  <script>
+    // 1. Initial Mock Database (Matching Google Sheets 'Users' Table)
+    const initialMockUsers = [
+      {
+        id: 'USR-001',
+        username: 'admin',
+        pin: '1234',
+        name: 'ผู้ดูแลระบบพัสดุ สำนักช่าง',
+        position: 'หัวหน้างานพัสดุและคลังกลาง',
+        department: 'ฝ่ายบริหารงานทั่วไป',
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        phone: '056-241-111 ต่อ 12'
+      },
+      {
+        id: 'USR-002',
+        username: 'officer1',
+        pin: '1111',
+        name: 'นายสมชาย ช่างชำนาญการ',
+        position: 'เจ้าหน้าที่งานพัสดุและคลังกลาง',
+        department: 'ฝ่ายบริหารงานทั่วไป',
+        role: 'OFFICER',
+        status: 'ACTIVE',
+        phone: '081-999-8877'
+      }
+    ];
+
+    // Current State
+    let usersList = JSON.parse(JSON.stringify(initialMockUsers));
+    const currentLoggedInUserId = 'USR-001'; // Current Admin User (admin)
+    let userToDeleteId = null;
+
+    // 2. Calculate Next Auto User ID (USR-xxx)
+    function calculateNextUserId() {
+      let maxNum = 0;
+      usersList.forEach(u => {
+        const match = String(u.id).match(/^USR-(\d+)$/i);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num > maxNum) maxNum = num;
+        }
+      });
+      const nextNum = maxNum + 1;
+      return 'USR-' + String(nextNum).padStart(3, '0');
+    }
+
+    // 3. Render Table
+    function renderUsers() {
+      const tbody = document.getElementById('usersTableBody');
+      const searchTerm = document.getElementById('searchInput').value.trim().toLowerCase();
+      const filterDeptEl = document.getElementById('filterDept');
+      const filterDept = filterDeptEl ? filterDeptEl.value : '';
+      const filterRole = document.getElementById('filterRole').value;
+      const filterStatus = document.getElementById('filterStatus').value;
+
+      // Filter
+      const filtered = usersList.filter(u => {
+        const matchSearch = !searchTerm || 
+          u.id.toLowerCase().includes(searchTerm) ||
+          u.username.toLowerCase().includes(searchTerm) ||
+          u.name.toLowerCase().includes(searchTerm) ||
+          u.position.toLowerCase().includes(searchTerm) ||
+          u.department.toLowerCase().includes(searchTerm);
+
+        const matchDept = !filterDept || u.department === filterDept;
+        const matchRole = !filterRole || u.role === filterRole;
+        const matchStatus = !filterStatus || u.status === filterStatus;
+
+        return matchSearch && matchDept && matchRole && matchStatus;
+      });
+
+      tbody.innerHTML = '';
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" class="text-center py-8 text-stone-400 font-medium">
+              ไม่พบรายชื่อผู้ใช้งานตามเงื่อนไขที่ค้นหา
+            </td>
+          </tr>
+        `;
+      } else {
+        filtered.forEach(u => {
+          const tr = document.createElement('tr');
+          tr.className = 'hover:bg-[#fbf7ee] transition border-b border-stone-200';
+          const isActive = u.status === 'ACTIVE';
+          const isAdmin = u.role === 'ADMIN';
+          const isMe = u.id === currentLoggedInUserId;
+
+          tr.innerHTML = `
+            <td class="py-3 px-3 text-center font-mono-ledger font-bold text-purple-950 bg-stone-100/50 whitespace-nowrap">
+              ${u.id}
+            </td>
+            <td class="py-3 px-4 font-mono-ledger font-bold text-stone-900 whitespace-nowrap">
+              ${u.username}
+              ${isMe ? '<span class="ml-1 text-[10px] text-purple-700 bg-purple-100 px-1 py-0.2 rounded border border-purple-200">ฉัน</span>' : ''}
+            </td>
+            <td class="py-3 px-4 min-w-[170px]">
+              <div class="font-bold text-stone-900 leading-tight">${u.name}</div>
+              <div class="text-[11px] text-stone-500 font-mono-ledger">${u.phone || 'ไม่มีเบอร์โทร'}</div>
+            </td>
+            <td class="py-3 px-4 text-stone-700 min-w-[150px]">${u.position}</td>
+            <td class="py-3 px-4 text-center font-medium text-stone-800 whitespace-nowrap">
+              <span class="inline-flex items-center justify-center whitespace-nowrap bg-[#f2ecdd] border border-[#d8cca8] px-3 py-1 rounded-md text-xs font-semibold text-stone-900 shadow-2xs">${u.department}</span>
+            </td>
+            <td class="py-3 px-3 text-center whitespace-nowrap">
+              ${isAdmin 
+                ? '<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold bg-purple-100 text-purple-900 border border-purple-300 whitespace-nowrap">👑 ผู้ดูแลระบบ</span>' 
+                : '<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[10px] font-bold bg-blue-100 text-blue-900 border border-blue-300 whitespace-nowrap">🛠️ เจ้าหน้าที่เบิก</span>'
+              }
+            </td>
+            <td class="py-3 px-3 text-center whitespace-nowrap">
+              ${isActive 
+                ? '<span class="inline-block px-2.5 py-1 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 whitespace-nowrap">ใช้งานปกติ</span>' 
+                : '<span class="inline-block px-2.5 py-1 rounded-md text-[10px] font-bold bg-red-100 text-red-800 border border-red-300 whitespace-nowrap">ระงับสิทธิ์</span>'
+              }
+            </td>
+            <td class="py-3 px-3 text-center whitespace-nowrap">
+              <div class="flex items-center justify-center gap-1">
+                <!-- Edit -->
+                <button 
+                  onclick="openUserModal('${u.id}')" 
+                  class="bg-stone-200 hover:bg-stone-300 text-stone-800 p-1.5 rounded text-xs transition cursor-pointer" 
+                  title="แก้ไขข้อมูลผู้ใช้"
+                >
+                  ✏️
+                </button>
+                <!-- Reset PIN -->
+                <button 
+                  onclick="quickResetPin('${u.id}', '${u.username}')" 
+                  class="bg-amber-100 hover:bg-amber-200 text-amber-900 border border-amber-300 p-1.5 rounded text-xs transition cursor-pointer" 
+                  title="รีเซ็ต PIN เป็น 1234"
+                >
+                  🔑
+                </button>
+                <!-- Toggle Status -->
+                <button 
+                  onclick="toggleUserStatus('${u.id}')" 
+                  class="p-1.5 rounded text-xs transition cursor-pointer ${isActive ? 'bg-orange-100 hover:bg-orange-200 text-orange-900 border border-orange-300' : 'bg-emerald-100 hover:bg-emerald-200 text-emerald-900 border border-emerald-300'}" 
+                  title="${isActive ? 'คลิกเพื่อระงับสิทธิ์ชั่วคราว' : 'คลิกเพื่อเปิดใช้งานปกติ'}"
+                >
+                  ${isActive ? '⛔' : '✅'}
+                </button>
+                <!-- Delete -->
+                <button 
+                  onclick="promptDeleteUser('${u.id}', '${u.username}')" 
+                  class="bg-red-100 hover:bg-red-200 text-red-800 border border-red-300 p-1.5 rounded text-xs transition cursor-pointer" 
+                  title="ลบผู้ใช้งาน"
+                >
+                  🗑️
+                </button>
+              </div>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      // Update counters
+      document.getElementById('showingCount').innerText = filtered.length;
+      document.getElementById('totalCount').innerText = usersList.length;
+      document.getElementById('tabBadgeCount').innerText = usersList.length;
+
+      // Stats
+      document.getElementById('statTotalUsers').innerText = usersList.length + ' คน';
+      document.getElementById('statActiveUsers').innerText = usersList.filter(u => u.status === 'ACTIVE').length + ' คน';
+      document.getElementById('statAdminUsers').innerText = usersList.filter(u => u.role === 'ADMIN').length + ' คน';
+      document.getElementById('statOfficerUsers').innerText = usersList.filter(u => u.role === 'OFFICER').length + ' คน';
+    }
+
+    // 4. Modal Open (Add or Edit)
+    let isEditingMode = false;
+
+    function openUserModal(userId) {
+      const modal = document.getElementById('userFormModal');
+      const errEl = document.getElementById('userFormErrorMsg');
+      errEl.classList.add('hidden');
+
+      if (userId) {
+        // Edit Mode
+        isEditingMode = true;
+        const u = usersList.find(x => x.id === userId);
+        if (!u) return;
+
+        document.getElementById('userModalTitle').innerText = `แก้ไขข้อมูลผู้มีสิทธิ์ (${u.username})`;
+        document.getElementById('formUserId').value = u.id;
+        document.getElementById('formUsername').value = u.username;
+        document.getElementById('formUsername').readOnly = false;
+        document.getElementById('formPin').value = '';
+        document.getElementById('formPin').placeholder = '(เว้นว่างไว้หากไม่เปลี่ยน)';
+        document.getElementById('pinHelperText').innerHTML = '* เว้นว่างไว้หากต้องการใช้รหัส PIN เดิม';
+        document.getElementById('formFullName').value = u.name;
+        document.getElementById('formPosition').value = u.position;
+        document.getElementById('formPhone').value = u.phone || '';
+        document.getElementById('formDepartment').value = 'ฝ่ายบริหารงานทั่วไป';
+        document.getElementById('formRole').value = u.role;
+        document.getElementById('formStatus').value = u.status;
+      } else {
+        // Add Mode
+        isEditingMode = false;
+        const nextId = calculateNextUserId();
+        document.getElementById('userModalTitle').innerText = 'เพิ่มเจ้าหน้าที่ผู้มีสิทธิ์ใหม่';
+        document.getElementById('formUserId').value = nextId;
+        document.getElementById('formUsername').value = '';
+        document.getElementById('formUsername').readOnly = false;
+        document.getElementById('formPin').value = '1234';
+        document.getElementById('formPin').placeholder = '1234';
+        document.getElementById('pinHelperText').innerHTML = '* ค่าเริ่มต้นคือ <strong class="text-purple-900">1234</strong> (เจ้าหน้าที่เปลี่ยนเองได้ในภายหลัง)';
+        document.getElementById('formFullName').value = '';
+        document.getElementById('formPosition').value = 'เจ้าหน้าที่งานพัสดุและคลังกลาง';
+        document.getElementById('formPhone').value = '';
+        document.getElementById('formDepartment').value = 'ฝ่ายบริหารงานทั่วไป';
+        document.getElementById('formRole').value = 'OFFICER';
+        document.getElementById('formStatus').value = 'ACTIVE';
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    function closeUserModal() {
+      document.getElementById('userFormModal').classList.add('hidden');
+    }
+
+    // 5. Handle Form Submit (Add / Save)
+    function handleUserFormSubmit(e) {
+      e.preventDefault();
+      const errEl = document.getElementById('userFormErrorMsg');
+      const errText = document.getElementById('userFormErrorText');
+
+      const userId = document.getElementById('formUserId').value.trim();
+      const username = document.getElementById('formUsername').value.trim().toLowerCase();
+      const pin = document.getElementById('formPin').value.trim();
+      const name = document.getElementById('formFullName').value.trim();
+      const position = document.getElementById('formPosition').value.trim();
+      const phone = document.getElementById('formPhone').value.trim();
+      const department = 'ฝ่ายบริหารงานทั่วไป';
+      const role = document.getElementById('formRole').value;
+      const status = document.getElementById('formStatus').value;
+
+      // Validation 1: Username format
+      if (!/^[a-zA-Z0-9_.-]+$/.test(username)) {
+        errText.innerText = 'Username ต้องเป็นตัวอักษรภาษาอังกฤษหรือตัวเลขเท่านั้น (ห้ามมีเว้นวรรค)';
+        errEl.classList.remove('hidden');
+        return;
+      }
+
+      // Validation 2: Check Duplicate Username
+      const duplicateUser = usersList.find(u => u.username.toLowerCase() === username && u.id !== userId);
+      if (duplicateUser) {
+        errText.innerText = `ชื่อผู้ใช้ "${username}" มีอยู่ในระบบแล้ว กรุณาใช้ชื่ออื่น`;
+        errEl.classList.remove('hidden');
+        return;
+      }
+
+      // Validation 3: Safeguard - Cannot degrade self role or status
+      if (userId === currentLoggedInUserId) {
+        if (role !== 'ADMIN') {
+          errText.innerText = 'ไม่สามารถลดระดับสิทธิ์ของบัญชีตนเองที่กำลังล็อกอินอยู่ได้!';
+          errEl.classList.remove('hidden');
+          return;
+        }
+        if (status !== 'ACTIVE') {
+          errText.innerText = 'ไม่สามารถระงับสิทธิ์บัญชีตนเองที่กำลังล็อกอินอยู่ได้!';
+          errEl.classList.remove('hidden');
+          return;
+        }
+      }
+
+      if (isEditingMode) {
+        // Update Existing
+        const target = usersList.find(u => u.id === userId);
+        if (target) {
+          target.username = username;
+          if (pin) target.pin = pin;
+          target.name = name;
+          target.position = position;
+          target.phone = phone;
+          target.department = department;
+          target.role = role;
+          target.status = status;
+          showToast(`✏️ อัปเดตข้อมูลของ [${username}] (${userId}) สำเร็จแล้ว!`);
+        }
+      } else {
+        // Create New
+        usersList.push({
+          id: userId,
+          username: username,
+          pin: pin || '1234',
+          name: name,
+          position: position,
+          phone: phone,
+          department: department,
+          role: role,
+          status: status
+        });
+        showToast(`🎉 เพิ่มผู้ใช้งานใหม่ [${username}] (${userId}) เรียบร้อยแล้ว!`);
+      }
+
+      closeUserModal();
+      renderUsers();
+    }
+
+    // 6. Quick Reset PIN to 1234
+    function quickResetPin(userId, username) {
+      if (!confirm(`ต้องการรีเซ็ตรหัส PIN ของผู้ใช้ "${username}" (${userId}) กลับเป็นค่าเริ่มต้น "1234" หรือไม่?`)) {
+        return;
+      }
+      const target = usersList.find(u => u.id === userId);
+      if (target) {
+        target.pin = '1234';
+        showToast(`🔑 รีเซ็ตรหัส PIN ของ "${username}" เป็น "1234" สำเร็จแล้ว!`);
+      }
+    }
+
+    // 7. Toggle Status (ACTIVE <-> INACTIVE)
+    function toggleUserStatus(userId) {
+      if (userId === currentLoggedInUserId) {
+        alert('⚠️ ไม่สามารถระงับสิทธิ์บัญชีของตนเองที่กำลังล็อกอินอยู่ได้ เพื่อความปลอดภัย!');
+        return;
+      }
+
+      const target = usersList.find(u => u.id === userId);
+      if (target) {
+        target.status = target.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+        showToast(`🔄 สลับสถานะของ "${target.username}" เป็น ${target.status} เรียบร้อยแล้ว`);
+        renderUsers();
+      }
+    }
+
+    // 8. Delete User with Safeguards
+    function promptDeleteUser(userId, username) {
+      // Safeguard 1: Cannot delete self
+      if (userId === currentLoggedInUserId) {
+        alert('⚠️ ไม่สามารถลบบัญชีของตนเอง (admin) ที่กำลังล็อกอินอยู่ได้ เพื่อความปลอดภัยของระบบ!');
+        return;
+      }
+
+      // Safeguard 2: Cannot delete the last admin
+      const target = usersList.find(u => u.id === userId);
+      if (target && target.role === 'ADMIN') {
+        const adminCount = usersList.filter(u => u.role === 'ADMIN').length;
+        if (adminCount <= 1) {
+          alert('⚠️ ไม่สามารถลบผู้ดูแลระบบคนสุดท้ายในระบบได้!');
+          return;
+        }
+      }
+
+      userToDeleteId = userId;
+      document.getElementById('deleteConfirmText').innerHTML = `
+        ต้องการลบบัญชีผู้ใช้งาน <strong>"${username}"</strong> (รหัส <strong>${userId}</strong>) ออกจากระบบใช่หรือไม่?<br>
+        <span class="text-red-600 text-[11px] font-medium">* การกระทำนี้ไม่สามารถย้อนกลับได้</span>
+      `;
+      document.getElementById('deleteConfirmModal').classList.remove('hidden');
+    }
+
+    function closeDeleteModal() {
+      document.getElementById('deleteConfirmModal').classList.add('hidden');
+      userToDeleteId = null;
+    }
+
+    document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+      if (!userToDeleteId) return;
+      const idx = usersList.findIndex(u => u.id === userToDeleteId);
+      if (idx !== -1) {
+        const deletedUser = usersList[idx];
+        usersList.splice(idx, 1);
+        showToast(`🗑️ ลบบัญชีผู้ใช้งาน "${deletedUser.username}" (${deletedUser.id}) เรียบร้อยแล้ว`);
+        renderUsers();
+      }
+      closeDeleteModal();
+    });
+
+    // 9. Reset Mock Data to Initial State
+    function resetMockData() {
+      if (confirm('ต้องการรีเซ็ตข้อมูลผู้ใช้งานจำลองกลับไปเป็น 2 รายการเริ่มต้นหรือไม่?')) {
+        usersList = JSON.parse(JSON.stringify(initialMockUsers));
+        renderUsers();
+        showToast('🔄 คืนค่าข้อมูลจำลองเริ่มต้นเรียบร้อยแล้ว');
+      }
+    }
+
+    // 10. Search & Filter Handler
+    function handleSearch() {
+      renderUsers();
+    }
+
+    // 11. Toast Helper
+    let toastTimeout;
+    function showToast(msg, icon = '✅') {
+      const toast = document.getElementById('toastNotification');
+      document.getElementById('toastMsg').innerText = msg;
+      document.getElementById('toastIcon').innerText = icon;
+      toast.classList.remove('hidden');
+
+      clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 3500);
+    }
+
+    // Initial Render on Page Load
+    renderUsers();
+  </script>
+</body>
+</html>
