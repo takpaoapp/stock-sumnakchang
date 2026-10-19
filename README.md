@@ -8,9 +8,9 @@
 ## 📌 1. ข้อมูลสรุประบบและสถานะปัจจุบัน (Executive Summary & Live State)
 
 * **ชื่อโครงการ:** ระบบบริหารคลังและขอเบิกพัสดุ สำนักช่าง (Stock Control & Requisition System)
-* **เวอร์ชัน Production ล่าสุด:** **Version 60**
+* **เวอร์ชัน Production ล่าสุด:** **Version 61**
 * **Deployment ID (Google Apps Script):** `AKfycbwXSGV8gcjoPexYTqV9bPC2jBxpoUYnb934F5FcQe9_qoi-wubSB5gZmqVZWWejf_ogqA`
-* **Production Web App URL:** `https://script.google.com/macros/s/AKfycbwXSGV8gcjoPexYTqV9bPC2jBxpoUYnb934F5FcQe9_qoi-wubSB5gZmqVZWWejf_ogqA/exec?v=60`
+* **Production Web App URL:** `https://script.google.com/macros/s/AKfycbwXSGV8gcjoPexYTqV9bPC2jBxpoUYnb934F5FcQe9_qoi-wubSB5gZmqVZWWejf_ogqA/exec?v=61`
 * **GitHub Repository:** `https://github.com/takpaoapp/stock-sumnakchang.git` (Branch: `main`)
 * **GitHub Pages (Frontend Entrypoint):** `https://takpaoapp.github.io/stock-sumnakchang/`
 * **Aesthetic & Design DNA:** สไตล์กระดาษราชการวินเทจ (Vintage Paper & Stock Card Ledger Theme) โทนสีครีมทอง `#f3efe6` / `#fbf5e6` ขอบหินเข้ม `#292524` ฟอนต์สารบรรณ (Sarabun), ฟอนต์หัวเรื่อง (Krub), และฟอนต์รหัสบัญชี (Courier Prime)
