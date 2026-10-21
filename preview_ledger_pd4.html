@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>พรีวิวเอกสาร บัญชีวัสดุ (พ.ด.๔) - สำนักการช่าง อบจ.ตาก</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Prompt:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* ใช้ฟอนต์สารบรรณแบบราชการ */
+    body {
+      font-family: 'Sarabun', 'TH Sarabun New', sans-serif;
+      background-color: #f1f5f9;
+      color: #000000;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* แผ่นเอกสารจำลอง A4 แนวนอน */
+    .ledger-paper {
+      width: 100%;
+      max-width: 1100px;
+      margin: 0 auto;
+      background: #ffffff;
+      padding: 24px 36px 30px 36px;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+      border-radius: 4px;
+      border: 1px solid #cbd5e1;
+      color: #000000;
+    }
+
+    /* สไตล์ตัวอักษรทางการ */
+    .gov-title {
+      font-size: 19px;
+      font-weight: 700;
+      color: #000000;
+      letter-spacing: 0.5px;
+    }
+
+    .gov-subtitle {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: #000000;
+    }
+
+    .gov-meta-label {
+      font-size: 14.5px;
+      color: #000000;
+      font-weight: 400;
+    }
+
+    .gov-meta-value {
+      font-size: 14.5px;
+      font-weight: 600;
+      color: #000000;
+    }
+
+    /* เส้นจุดไข่ปลาทางการแบบราชการ */
+    .dotted-fill {
+      border-bottom: 1px dotted #000000;
+      display: inline-block;
+      min-height: 18px;
+      vertical-align: bottom;
+    }
+
+    /* ตารางเส้นขอบดำล้วน คมชัด ขาว-ดำ 100% ตามแบบ พ.ด.๔ */
+    .table-pd4 {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1.2px solid #000000;
+      font-size: 14px;
+      line-height: 1.35;
+      color: #000000;
+    }
+
+    .table-pd4 th, .table-pd4 td {
+      border: 1px solid #000000;
+      padding: 4px 6px;
+      vertical-align: middle;
+      color: #000000;
+      background-color: #ffffff;
+    }
+
+    .table-pd4 th {
+      font-weight: 700;
+      text-align: center;
+      padding-top: 5px;
+      padding-bottom: 5px;
+    }
+
+    .table-pd4 td.center { text-align: center; }
+    .table-pd4 td.right { text-align: right; }
+    .table-pd4 td.left { text-align: left; }
+
+    /* ช่องกรอกเลขที่บิลรับเข้า (ในเว็บมีขอบประบางๆ ให้รู้ว่าคลิกพิมพ์ได้ ตอนพิมพ์ออกเครื่องเป็นขาวดำปกติ) */
+    .doc-input {
+      background: transparent;
+      border: 1px dashed #64748b;
+      border-radius: 2px;
+      padding: 1px 4px;
+      font-size: 13.5px;
+      height: 23px;
+      width: 100%;
+      color: #000000;
+      font-weight: 600;
+      text-align: center;
+      outline: none;
+    }
+    .doc-input:focus {
+      border-color: #000000;
+      border-style: solid;
+      background: #fafafa;
+    }
+
+    /* แถวว่างเปล่า 20 แถวเป๊ะ */
+    .blank-row {
+      height: 27px;
+    }
+    .table-pd4 tbody tr {
+      height: 27px;
+    }
+
+    @media print {
+      body {
+        background: #ffffff !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .ledger-paper {
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        max-width: 100% !important;
+      }
+      @page {
+        size: A4 landscape;
+        margin: 8mm 10mm 6mm 10mm;
+      }
+      .doc-input {
+        border: none !important;
+        padding: 0 !important;
+        background: transparent !important;
+      }
+    }
+  </style>
+</head>
+<body class="p-3 md:p-6">
+
+  <!-- แถบเครื่องมือและตัวกรองตามรูปที่ 2 (ไม่พิมพ์) -->
+  <div class="no-print max-w-[1100px] mx-auto mb-5 bg-white p-4 rounded-xl border border-slate-300 shadow-sm">
+    <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-200">
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 rounded bg-slate-800 text-white flex items-center justify-center font-bold text-sm">
+          พ.๔
+        </div>
+        <div>
+          <h1 class="text-base font-bold text-slate-900">พรีวิวแบบฟอร์มบัญชีวัสดุ (พ.ด.๔) — ปรับตามสัดส่วนต้นฉบับ</h1>
+          <p class="text-xs text-slate-500">พิมพ์ขาว-ดำล้วน 100% • ปรับหัวเรื่องเล็กลง • ตาราง 20 แถวพอดีหน้ากระดาษ A4 แนวนอน</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="window.print()" class="px-3.5 py-1.5 bg-slate-900 hover:bg-black text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-sm transition">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4H7v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+          พิมพ์เอกสาร (ขาว-ดำ A4 แนวนอน)
+        </button>
+      </div>
+    </div>
+
+    <!-- แถวตัวกรองตามรูปที่ 2 -->
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-2.5 mt-3 items-end text-xs">
+      <div class="md:col-span-3">
+        <label class="block font-semibold text-slate-700 mb-1">เลือกประเภทคลัง</label>
+        <select class="w-full bg-slate-50 border border-slate-300 rounded p-1.5 outline-none">
+          <option>วัสดุสำนักงาน</option>
+          <option>วัสดุคอมพิวเตอร์</option>
+          <option>วัสดุก่อสร้าง / งานช่าง</option>
+        </select>
+      </div>
+      <div class="md:col-span-4">
+        <label class="block font-semibold text-slate-700 mb-1">เลือกวัสดุ</label>
+        <select class="w-full bg-slate-50 border border-slate-300 rounded p-1.5 outline-none">
+          <option selected>ปากกาเคมี MAGIC สีแดง</option>
+          <option>กระดาษถ่ายเอกสาร A4 80 แกรม</option>
+        </select>
+      </div>
+      <div class="md:col-span-3">
+        <label class="block font-semibold text-slate-700 mb-1">เลือกช่วงเวลา</label>
+        <div class="flex items-center gap-1">
+          <input type="text" value="01/01/2026" class="w-1/2 bg-slate-50 border border-slate-300 rounded p-1.5 text-center">
+          <span class="text-slate-400">-</span>
+          <input type="text" value="31/12/2026" class="w-1/2 bg-slate-50 border border-slate-300 rounded p-1.5 text-center">
+        </div>
+      </div>
+      <div class="md:col-span-2">
+        <button class="w-full py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded font-semibold transition">
+          ค้นหา
+        </button>
+      </div>
+    </div>
+
+    <!-- แถบสลับแผ่นที่ -->
+    <div class="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
+      <div class="flex items-center gap-1.5">
+        <span class="font-bold text-slate-700">แผ่นที่ (รันสะสมตลอดปี 2026):</span>
+        <button class="px-2 py-0.5 bg-slate-800 text-white font-bold rounded">แผ่นที่ 1</button>
+        <button class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded">แผ่นที่ 2</button>
+        <button class="px-2 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded">แผ่นที่ 3</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- แผ่นเอกสาร พ.ด.๔ (จัดวางโครงสร้างและสัดส่วนให้เหมือนรูปต้นฉบับ 100%) -->
+  <div class="ledger-paper">
+    
+    <!-- 1. บรรทัดบนสุด: บัญชีวัสดุ (กึ่งกลาง ขนาดเล็กลงตามรูป) และ พ.ด.๔ (มุมขวา) -->
+    <div class="relative w-full mb-1">
+      <!-- บัญชีวัสดุ อยู่กึ่งกลาง ขนาดประมาณ 19px ไม่ใหญ่เกินไปตามรูปต้นฉบับ -->
+      <div class="text-center">
+        <span class="gov-title">บัญชีวัสดุ</span>
+      </div>
+      <!-- พ.ด.๔ ชิดมุมขวาบน -->
+      <div class="absolute right-0 top-0 text-right">
+        <span class="gov-subtitle" style="font-size: 16px;">พ.ด.๔</span>
+      </div>
+    </div>
+
+    <!-- 2. บรรทัดหน่วยงาน: สำนักการช่าง องค์การบริหารส่วนจังหวัดตาก วางเยื้องขวาตามรูปต้นฉบับ -->
+    <div class="w-full flex justify-end mb-2" style="padding-right: 48px;">
+      <span class="gov-subtitle font-bold text-black" style="font-size: 14.5px;">
+        สำนักการช่าง องค์การบริหารส่วนจังหวัดตาก
+      </span>
+    </div>
+
+    <!-- 3. ส่วนข้อมูลหัวเอกสาร (จัดแถวตรงกันเป๊ะตามรูปต้นฉบับ 4 บรรทัด) -->
+    <div class="text-sm mb-2.5 text-black" style="font-size: 14px; line-height: 1.65;">
+      
+      <!-- บรรทัดที่ 1: แผ่นที่ (ฝั่งซ้าย) | ฝั่งขวาเว้นว่างตามต้นฉบับ -->
+      <div class="grid grid-cols-12 gap-x-6 items-baseline mb-0.5">
+        <div class="col-span-6 flex items-baseline">
+          <span class="gov-meta-label whitespace-nowrap">แผ่นที่</span>
+          <span class="dotted-fill flex-1 ml-1 text-center font-bold">1</span>
+          <span class="w-36"></span> <!-- เว้นช่องว่างท้ายให้เหมือนต้นฉบับ -->
+        </div>
+        <div class="col-span-6">
+          <!-- ฝั่งขวาเว้นว่างตรงกับแถว แผ่นที่ -->
+        </div>
+      </div>
+
+      <!-- บรรทัดที่ 2: ประเภท (ฝั่งซ้าย) อยู่ความสูงเดียวกับ ชื่อหรือชนิดวัสดุ (ฝั่งขวา) เป๊ะๆ -->
+      <div class="grid grid-cols-12 gap-x-6 items-baseline mb-0.5">
+        <div class="col-span-6 flex items-baseline">
+          <span class="gov-meta-label whitespace-nowrap">ประเภท</span>
+          <span class="dotted-fill flex-1 ml-1 pl-2 font-semibold">วัสดุสำนักงาน</span>
+        </div>
+        <div class="col-span-6 flex items-baseline">
+          <span class="gov-meta-label whitespace-nowrap">ชื่อหรือชนิดวัสดุ</span>
+          <span class="dotted-fill flex-1 ml-1 pl-2 font-semibold">ปากกาเคมี MAGIC สีแดง</span>
+        </div>
+      </div>
+
+      <!-- บรรทัดที่ 3: ขนาดหรือลักษณะ (ฝั่งซ้าย) อยู่ความสูงเดียวกับ จำนวนอย่างสูง (ฝั่งขวา) -->
+      <div class="grid grid-cols-12 gap-x-6 items-baseline mb-0.5">
+        <div class="col-span-6 flex items-baseline">
+          <span class="gov-meta-label whitespace-nowrap">ขนาดหรือลักษณะ</span>
+          <span class="dotted-fill flex-1 ml-1"></span>
+        </div>
+        <div class="col-span-6 flex items-baseline">
+          <span class="gov-meta-label whitespace-nowrap">จำนวนอย่างสูง</span>
+          <span class="dotted-fill flex-1 ml-1"></span>
+        </div>
+      </div>
+
+      <!-- บรรทัดที่ 4: หน่วยนับ/ที่เก็บ (ฝั่งซ้าย) อยู่ความสูงเดียวกับ จำนวนอย่างต่ำ (ฝั่งขวา) -->
+      <div class="grid grid-cols-12 gap-x-6 items-baseline">
+        <div class="col-span-6 flex items-baseline">
+          <span class="gov-meta-label whitespace-nowrap">หน่วยนับ</span>
+          <span class="dotted-fill w-32 ml-1 mr-3"></span>
+          <span class="gov-meta-label whitespace-nowrap">ที่เก็บ</span>
+          <span class="dotted-fill flex-1 ml-1"></span>
+        </div>
+        <div class="col-span-6 flex items-baseline">
+          <span class="gov-meta-label whitespace-nowrap">จำนวนอย่างต่ำ</span>
+          <span class="dotted-fill flex-1 ml-1"></span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- 4. ตาราง พ.ด.๔ (ขาว-ดำล้วน 100% ครบ 20 แถวพอดีเป๊ะ) -->
+    <table class="table-pd4">
+      <thead>
+        <!-- แถวที่ 1 หัวตาราง -->
+        <tr>
+          <th rowspan="2" style="width: 85px;">วัน/เดือน/ปี</th>
+          <th rowspan="2" style="width: 220px;">รับจาก/จ่ายให้</th>
+          <th rowspan="2" style="width: 120px;">เลขที่เอกสาร</th>
+          <th rowspan="2" style="width: 95px;">ราคาต่อหน่วย<br>(บาท)</th>
+          <th colspan="2" style="width: 125px;">รับ</th>
+          <th colspan="2" style="width: 125px;">จ่าย</th>
+          <th colspan="2" style="width: 125px;">คงเหลือ</th>
+          <th rowspan="2" style="width: 110px;">หมายเหตุ</th>
+        </tr>
+        <!-- แถวที่ 2 หัวตาราง -->
+        <tr>
+          <th style="width: 50px;">จำนวน</th>
+          <th style="width: 75px;">ราคา</th>
+          <th style="width: 50px;">จำนวน</th>
+          <th style="width: 75px;">ราคา</th>
+          <th style="width: 50px;">จำนวน</th>
+          <th style="width: 75px;">ราคา</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- แถวที่ 1: ยอดยกมา (Opening Balance) -->
+        <tr style="height: 27px;">
+          <td class="center">01/01/2569</td>
+          <td class="left font-bold pl-2">ยอดยกมา</td>
+          <td class="center">-</td>
+          <td class="right">15.00</td>
+          <td class="center">-</td>
+          <td class="right">-</td>
+          <td class="center">-</td>
+          <td class="right">-</td>
+          <td class="center font-bold">20</td>
+          <td class="right font-bold">300.00</td>
+          <td class="left pl-1 text-xs">ยกมาจากปีก่อน</td>
+        </tr>
+
+        <!-- แถวที่ 2: รับเข้า (IN) -> กล่องพิมพ์เลขที่บิลขาวดำ -->
+        <tr style="height: 27px;">
+          <td class="center">05/01/2569</td>
+          <td class="left pl-1">ร้านตากเครื่องเขียน</td>
+          <td class="center">
+            <input type="text" value="บิล 482/69" class="doc-input">
+          </td>
+          <td class="right">15.00</td>
+          <td class="center font-semibold">50</td>
+          <td class="right font-semibold">750.00</td>
+          <td class="center">-</td>
+          <td class="right">-</td>
+          <td class="center font-bold">70</td>
+          <td class="right font-bold">1,050.00</td>
+          <td class="left pl-1 text-xs">รับพัสดุเข้าคลัง</td>
+        </tr>
+
+        <!-- แถวที่ 3: เบิกจ่าย (OUT) -> Auto Run 1/2026 ขาวดำ -->
+        <tr style="height: 27px;">
+          <td class="center">12/01/2569</td>
+          <td class="left pl-1">นายสมชาย ช่างสำรวจ</td>
+          <td class="center font-bold">1/2026</td>
+          <td class="right">15.00</td>
+          <td class="center">-</td>
+          <td class="right">-</td>
+          <td class="center font-semibold">10</td>
+          <td class="right font-semibold">150.00</td>
+          <td class="center font-bold">60</td>
+          <td class="right font-bold">900.00</td>
+          <td class="left pl-1 text-xs">สำรวจแนวถนน</td>
+        </tr>
+
+        <!-- แถวที่ 4: เบิกจ่าย (OUT) -> Auto Run 2/2026 ขาวดำ -->
+        <tr style="height: 27px;">
+          <td class="center">18/01/2569</td>
+          <td class="left pl-1">น.ส.วิภาดา ฝ่ายบริหารฯ</td>
+          <td class="center font-bold">2/2026</td>
+          <td class="right">15.00</td>
+          <td class="center">-</td>
+          <td class="right">-</td>
+          <td class="center font-semibold">5</td>
+          <td class="right font-semibold">75.00</td>
+          <td class="center font-bold">55</td>
+          <td class="right font-bold">825.00</td>
+          <td class="left pl-1 text-xs">จัดประชุมสภา</td>
+        </tr>
+
+        <!-- แถวที่ 5: รับเข้า (IN) -> กล่องพิมพ์เลขที่บิลขาวดำ -->
+        <tr style="height: 27px;">
+          <td class="center">25/01/2569</td>
+          <td class="left pl-1">บจก.สยามพัสดุภัณฑ์</td>
+          <td class="center">
+            <input type="text" value="ใบส่งของ 108/69" class="doc-input">
+          </td>
+          <td class="right">15.00</td>
+          <td class="center font-semibold">30</td>
+          <td class="right font-semibold">450.00</td>
+          <td class="center">-</td>
+          <td class="right">-</td>
+          <td class="center font-bold">85</td>
+          <td class="right font-bold">1,275.00</td>
+          <td class="left pl-1 text-xs">ซื้อเติมคลังงวด ๑</td>
+        </tr>
+
+        <!-- แถวที่ 6: เบิกจ่าย (OUT) -> Auto Run 3/2026 ขาวดำ -->
+        <tr style="height: 27px;">
+          <td class="center">02/02/2569</td>
+          <td class="left pl-1">นายกิตติศักดิ์ ฝ่ายช่าง</td>
+          <td class="center font-bold">3/2026</td>
+          <td class="right">15.00</td>
+          <td class="center">-</td>
+          <td class="right">-</td>
+          <td class="center font-semibold">15</td>
+          <td class="right font-semibold">225.00</td>
+          <td class="center font-bold">70</td>
+          <td class="right font-bold">1,050.00</td>
+          <td class="left pl-1 text-xs">งานตีเส้นจราจร</td>
+        </tr>
+
+        <!-- แถวที่ 7 ถึง แถวที่ 19: แถวว่างเปล่าตีเส้นขอบดำต่อเนื่องตามแบบ พ.ด.๔ -->
+        <tr class="blank-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr class="blank-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr class="blank-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr class="blank-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr class="blank-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr class="blank-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr class="blank-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr class="blank-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr class="blank-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr class="blank-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr class="blank-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr class="blank-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr class="blank-row"><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+
+        <!-- แถวที่ 20 (แถวสุดท้ายของแผ่นที่ ๑): ยอดยกไป แผ่นที่ ๒ -->
+        <tr style="height: 27px;">
+          <td class="center"></td>
+          <td class="left font-bold pl-2">ยอดยกไป แผ่นที่ 2</td>
+          <td class="center">-</td>
+          <td class="right">15.00</td>
+          <td class="center">-</td>
+          <td class="right">-</td>
+          <td class="center">-</td>
+          <td class="right">-</td>
+          <td class="center font-bold">70</td>
+          <td class="right font-bold">1,050.00</td>
+          <td class="left pl-1 text-xs"></td>
+        </tr>
+      </tbody>
+    </table>
+
+  </div>
+
+  <div class="no-print max-w-[1100px] mx-auto mt-3 text-center text-xs text-slate-400 pb-10">
+    แบบฟอร์มบัญชีวัสดุ (พ.ด.๔) • สำนักการช่าง องค์การบริหารส่วนจังหวัดตาก • จัดทำด้วยระบบขาว-ดำ มาตรฐานงานสารบรรณ
+  </div>
+
+</body>
+</html>
