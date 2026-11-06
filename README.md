@@ -8,9 +8,9 @@
 ## 📌 1. ข้อมูลสรุประบบและสถานะปัจจุบัน (Executive Summary & Live State)
 
 * **ชื่อโครงการ:** ระบบบริหารคลังและขอเบิกพัสดุ สำนักช่าง (Stock Control & Requisition System)
-* **เวอร์ชัน Production ล่าสุด:** **Version 177** (อัปเดต 6 พฤศจิกายน 2569)
+* **เวอร์ชัน Production ล่าสุด:** **Version 178** (อัปเดต 6 พฤศจิกายน 2569)
 * **Deployment ID (Google Apps Script):** `AKfycbwXSGV8gcjoPexYTqV9bPC2jBxpoUYnb934F5FcQe9_qoi-wubSB5gZmqVZWWejf_ogqA`
-* **Production Web App URL:** `https://script.google.com/macros/s/AKfycbwXSGV8gcjoPexYTqV9bPC2jBxpoUYnb934F5FcQe9_qoi-wubSB5gZmqVZWWejf_ogqA/exec?v=177`
+* **Production Web App URL:** `https://script.google.com/macros/s/AKfycbwXSGV8gcjoPexYTqV9bPC2jBxpoUYnb934F5FcQe9_qoi-wubSB5gZmqVZWWejf_ogqA/exec?v=178`
 * **บันทึกประวัติการแก้ไข:** ดูรายละเอียดทั้งหมดใน [CHANGELOG.md](file:///D:/stock/CHANGELOG.md)
 * **GitHub Repository:** `https://github.com/takpaoapp/stock-sumnakchang.git` (Branch: `main`)
 * **GitHub Pages (Frontend Entrypoint):** `https://takpaoapp.github.io/stock-sumnakchang/`
